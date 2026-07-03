@@ -65,6 +65,23 @@ export function EmployeeList() {
 
   useEffect(() => {
     fetchEmployees()
+    
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetchApi(`/employees`, {}, currentUserRole)
+        if (res.ok) {
+          setEmployees(await res.json())
+        }
+        const depRes = await fetchApi('/departments', {}, currentUserRole)
+        if (depRes.ok) {
+          setDepartments(await depRes.json())
+        }
+      } catch (e) {
+        console.error("Polling error:", e)
+      }
+    }, 3000)
+    
+    return () => clearInterval(intervalId)
   }, [])
 
   const handleMockApprove = async (id: string, roleToAssign: string) => {
@@ -200,7 +217,7 @@ export function EmployeeList() {
                     {activeTab === "pending" && (
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {(currentUserRole === "admin" || currentUserRole === "SuperAdmin") && (
+                          {currentUserRole === "admin" && (
                             <>
                               <Button size="sm" variant="outline" onClick={() => handleMockApprove(emp.id, 'admin')}>Make Admin</Button>
                               <Button size="sm" variant="outline" onClick={() => handleMockApprove(emp.id, 'project-manager')}>Make PM</Button>

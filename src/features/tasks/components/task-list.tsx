@@ -45,6 +45,20 @@ export function TaskList() {
 
   useEffect(() => {
     fetchTasks()
+    
+    // Poll for updates every 3 seconds to keep data fresh without manual refresh
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetchApi("/tasks", {}, effectiveRole)
+        if (res.ok) {
+          setTasks(await res.json())
+        }
+      } catch (e) {
+        console.error("Polling error:", e)
+      }
+    }, 3000)
+    
+    return () => clearInterval(intervalId)
   }, [effectiveRole, pathname])
 
   const fetchTasks = async () => {

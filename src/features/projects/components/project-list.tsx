@@ -42,6 +42,19 @@ export function ProjectList() {
 
   useEffect(() => {
     fetchData()
+    
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await fetchApi("/projects", {}, effectiveRole)
+        if (res.ok) {
+          setProjects(await res.json())
+        }
+      } catch (e) {
+        console.error("Polling error:", e)
+      }
+    }, 3000)
+    
+    return () => clearInterval(intervalId)
   }, [effectiveRole])
 
   const fetchData = async () => {
