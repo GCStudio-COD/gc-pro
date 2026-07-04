@@ -223,7 +223,7 @@ export function EmployeeList() {
                               <Button size="sm" variant="outline" onClick={() => handleMockApprove(emp.id, 'project-manager')}>Make PM</Button>
                             </>
                           )}
-                          <Button size="sm" onClick={() => handleMockApprove(emp.id, 'Employee')}>Approve as Employee</Button>
+                          <Button size="sm" onClick={() => handleMockApprove(emp.id, 'employee')}>Approve as Employee</Button>
                         </div>
                       </TableCell>
                     )}
