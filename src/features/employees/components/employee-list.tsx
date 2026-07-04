@@ -98,6 +98,28 @@ export function EmployeeList() {
     }
   }
 
+  const handleDelete = async (id: string, roleOfTarget: string) => {
+    if (currentUserRole !== 'admin' && currentUserRole !== 'SuperAdmin') return;
+    if (roleOfTarget === 'SuperAdmin' && currentUserRole !== 'SuperAdmin') {
+      alert("Only a SuperAdmin can remove another SuperAdmin.");
+      return;
+    }
+    
+    if (window.confirm("Are you sure you want to completely remove this employee? This action cannot be undone.")) {
+      try {
+        const res = await fetchApi(`/employees/${id}`, { method: 'DELETE' }, currentUserRole);
+        if (res.ok) {
+          fetchEmployees();
+        } else {
+          const data = await res.json();
+          alert(data.error || "Failed to remove employee.");
+        }
+      } catch (e) {
+        console.error("Delete error:", e);
+      }
+    }
+  }
+
   const displayedEmployees = employees.filter((emp) => {
     const matchesSearch = emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           emp.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -174,13 +196,15 @@ export function EmployeeList() {
                 <TableHead>Employee</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
-                {activeTab === "pending" && <TableHead className="text-right">Actions</TableHead>}
+                {(activeTab === "pending" || currentUserRole === "admin" || currentUserRole === "SuperAdmin") && (
+                  <TableHead className="text-right">Actions</TableHead>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={activeTab === "pending" ? 4 : 3} className="h-24 text-center">Loading...</TableCell>
+                  <TableCell colSpan={(activeTab === "pending" || currentUserRole === "admin" || currentUserRole === "SuperAdmin") ? 4 : 3} className="h-24 text-center">Loading...</TableCell>
                 </TableRow>
               ) : currentEmployees.length > 0 ? (
                 currentEmployees.map((emp) => (
@@ -214,16 +238,21 @@ export function EmployeeList() {
                         {emp.status}
                       </Badge>
                     </TableCell>
-                    {activeTab === "pending" && (
+                    {(activeTab === "pending" || currentUserRole === "admin" || currentUserRole === "SuperAdmin") && (
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          {currentUserRole === "admin" && (
+                          {activeTab === "pending" && currentUserRole === "admin" && (
                             <>
                               <Button size="sm" variant="outline" onClick={() => handleMockApprove(emp.id, 'admin')}>Make Admin</Button>
                               <Button size="sm" variant="outline" onClick={() => handleMockApprove(emp.id, 'project-manager')}>Make PM</Button>
                             </>
                           )}
-                          <Button size="sm" onClick={() => handleMockApprove(emp.id, 'employee')}>Approve as Employee</Button>
+                          {activeTab === "pending" && (
+                            <Button size="sm" onClick={() => handleMockApprove(emp.id, 'employee')}>Approve as Employee</Button>
+                          )}
+                          {(currentUserRole === "admin" || currentUserRole === "SuperAdmin") && (
+                            <Button size="sm" variant="destructive" onClick={() => handleDelete(emp.id, emp.role)}>Remove</Button>
+                          )}
                         </div>
                       </TableCell>
                     )}
@@ -231,7 +260,7 @@ export function EmployeeList() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={activeTab === "pending" ? 4 : 3} className="h-24 text-center">
+                  <TableCell colSpan={(activeTab === "pending" || currentUserRole === "admin" || currentUserRole === "SuperAdmin") ? 4 : 3} className="h-24 text-center">
                     No results.
                   </TableCell>
                 </TableRow>
