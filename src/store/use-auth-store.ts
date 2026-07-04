@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type Role = 'admin' | 'project-manager' | 'employee' | 'Pending'
+export type Role = 'admin' | 'project-manager' | 'employee' | 'Pending' | 'SuperAdmin'
 
 interface AuthStore {
   token: string | null

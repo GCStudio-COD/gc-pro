@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type Role = 'admin' | 'project-manager' | 'employee'
+type Role = 'admin' | 'project-manager' | 'employee' | 'SuperAdmin'
 
 interface RoleStore {
   role: Role
