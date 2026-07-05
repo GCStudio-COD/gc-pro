@@ -15,19 +15,27 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { fetchApi } from "@/lib/api"
 import { motion } from "framer-motion"
 
 export function AppHeader() {
   const { role } = useRoleStore()
+  const logout = useAuthStore((state) => state.logout)
   const pathname = usePathname()
+  const router = useRouter()
   
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
+
+  const handleLogout = () => {
+    logout()
+    router.push('/login')
+  }
   
   const [notifications, setNotifications] = useState<any[]>([])
   const [hasUnread, setHasUnread] = useState(false)
@@ -153,7 +161,10 @@ export function AppHeader() {
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
