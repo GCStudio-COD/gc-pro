@@ -1,15 +1,34 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Plane } from "lucide-react"
+import { useAuthStore } from "@/store/use-auth-store"
+import { fetchApi } from "@/lib/api"
+import { useRoleStore } from "@/store/use-role-store"
 
 export function EmployeeLeaveBalanceWidget() {
-  const leaves = [
-    { type: "Paid Time Off", used: 12, total: 20, color: "bg-primary" },
-    { type: "Sick Leave", used: 2, total: 10, color: "bg-destructive" },
-  ]
+  const { userId } = useAuthStore()
+  const { role } = useRoleStore()
+  const [balances, setBalances] = useState<any>(null)
+
+  useEffect(() => {
+    if (userId) {
+      fetchApi(`/leaves/balances/${userId}`, {}, role).then(res => res.json()).then(data => {
+        setBalances(data)
+      }).catch(console.error)
+    }
+  }, [userId, role])
+
+  const leaves = balances ? [
+    { type: "Paid Time Off (Weekly)", used: balances.paid.used, total: balances.paid.total, color: "bg-primary" },
+    { type: "Emergency Leave (Weekly)", used: balances.emergency.used, total: balances.emergency.total, color: "bg-orange-500" },
+    { type: "Sick Leave (Yearly)", used: balances.sick.used, total: balances.sick.total, color: "bg-destructive" },
+  ] : []
+
+  if (!balances) return null;
 
   return (
     <motion.div

@@ -77,13 +77,13 @@ export function LeaveApprovalsWidget() {
                     <TableCell className="font-medium">
                       {leave.employee ? `${leave.employee.firstName} ${leave.employee.lastName}` : 'Unknown Employee'}
                     </TableCell>
-                    <TableCell>{leave.reason}</TableCell>
+                    <TableCell>{leave.type} - {leave.reason}</TableCell>
                     <TableCell>
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' ? 'destructive' : 'secondary'}>
-                        {leave.status}
+                      <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' || leave.status === 'Cancelled' ? 'destructive' : leave.status === 'CancelPending' ? 'outline' : 'secondary'}>
+                        {leave.status === 'CancelPending' ? 'Cancellation Pending' : leave.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -96,6 +96,18 @@ export function LeaveApprovalsWidget() {
                           <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(leave.id, 'Rejected')}>
                             <XCircle className="h-4 w-4 mr-1 text-red-500" />
                             Reject
+                          </Button>
+                        </div>
+                      )}
+                      {leave.status === 'CancelPending' && (
+                        <div className="flex justify-end gap-2">
+                          <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(leave.id, 'Cancelled')}>
+                            <CheckCircle2 className="h-4 w-4 mr-1 text-green-500" />
+                            Approve Cancel
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(leave.id, 'Approved')}>
+                            <XCircle className="h-4 w-4 mr-1 text-red-500" />
+                            Deny Cancel
                           </Button>
                         </div>
                       )}

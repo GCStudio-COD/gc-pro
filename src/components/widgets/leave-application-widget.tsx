@@ -10,12 +10,14 @@ import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
 import { useAuthStore } from "@/store/use-auth-store"
 import { usePathname } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export function LeaveApplicationWidget() {
   const [leaves, setLeaves] = useState<any[]>([])
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [reason, setReason] = useState("")
+  const [type, setType] = useState("Paid")
 
   const { role } = useRoleStore()
   const pathname = usePathname()
@@ -47,18 +49,36 @@ export function LeaveApplicationWidget() {
     e.preventDefault()
     if (!userId) return;
     try {
-      await fetchApi('/leaves', {
+      const res = await fetchApi('/leaves', {
         method: 'POST',
         body: JSON.stringify({
           employeeId: userId,
           startDate: new Date(startDate).toISOString(),
           endDate: new Date(endDate).toISOString(),
-          reason
+          reason,
+          type
         })
       }, effectiveRole)
+      
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to submit leave request.");
+        return;
+      }
+      
       setStartDate("")
       setEndDate("")
       setReason("")
+      fetchLeaves()
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleCancel = async (id: string) => {
+    if (!confirm("Are you sure you want to request cancellation for this leave?")) return;
+    try {
+      await fetchApi(`/leaves/${id}/cancel`, { method: 'PUT' }, effectiveRole)
       fetchLeaves()
     } catch (e) {
       console.error(e)
@@ -88,6 +108,19 @@ export function LeaveApplicationWidget() {
               <Label>Reason</Label>
               <Input placeholder="E.g. Vacation, Sick leave" value={reason} onChange={e => setReason(e.target.value)} required />
             </div>
+            <div className="space-y-2">
+              <Label>Leave Type</Label>
+              <Select value={type} onValueChange={setType} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select leave type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Paid">Paid Time Off (Weekly)</SelectItem>
+                  <SelectItem value="Emergency">Emergency Leave (Weekly)</SelectItem>
+                  <SelectItem value="Sick">Sick Leave (Yearly)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button type="submit" className="w-full">Submit Request</Button>
           </form>
         </CardContent>
@@ -106,14 +139,19 @@ export function LeaveApplicationWidget() {
               {leaves.map((leave, i) => (
                 <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
-                    <div className="font-medium">{leave.reason}</div>
+                    <div className="font-medium">{leave.type} - {leave.reason}</div>
                     <div className="text-sm text-muted-foreground">
                       {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
                     </div>
                   </div>
-                  <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' ? 'destructive' : 'secondary'}>
-                    {leave.status}
-                  </Badge>
+                  <div className="flex items-center gap-3">
+                    <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' || leave.status === 'Cancelled' ? 'destructive' : leave.status === 'CancelPending' ? 'outline' : 'secondary'}>
+                      {leave.status === 'CancelPending' ? 'Cancellation Pending' : leave.status}
+                    </Badge>
+                    {(leave.status === 'Pending' || leave.status === 'Approved') && (
+                      <Button variant="outline" size="sm" onClick={() => handleCancel(leave.id)}>Cancel</Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
