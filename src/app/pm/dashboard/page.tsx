@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/app-layout"
 import { PmWelcomeWidget } from "@/widgets/pm-welcome-widget"
 import { PmMyProjectsWidget } from "@/widgets/pm-my-projects-widget"
+import { EmployeeLeaveBalanceWidget } from "@/widgets/employee-leave-balance-widget"
 import { PmQuickActionsWidget } from "@/widgets/pm-quick-actions-widget"
 import { PmProjectProgressWidget } from "@/widgets/pm-project-progress-widget"
 import { PmTaskStatusWidget } from "@/widgets/pm-task-status-widget"
@@ -17,9 +18,12 @@ export default function ProjectManagerDashboardPage() {
       <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-[1400px] mx-auto">
         
         {/* Top: Welcome & High-level stats */}
-        <div className="grid grid-cols-1 gap-6">
-          <PmWelcomeWidget />
-          <PmMyProjectsWidget />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 grid grid-cols-1 gap-6">
+            <PmWelcomeWidget />
+            <PmMyProjectsWidget />
+          </div>
+          <EmployeeLeaveBalanceWidget />
         </div>
         
         {/* Middle: Data & Analytics */}
