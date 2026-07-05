@@ -190,7 +190,15 @@ export function ProjectList() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium text-foreground">{prj.name}</span>
-                        <span className="text-xs text-muted-foreground">{prj.id.substring(0,8)}</span>
+                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                          <span>{prj.id.substring(0,8)}</span>
+                          {prj.clientName && (
+                            <>
+                              <span>•</span>
+                              <span>{prj.clientName}</span>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

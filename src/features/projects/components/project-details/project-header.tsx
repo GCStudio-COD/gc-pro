@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Calendar, Target, Flag, Building } from "lucide-react"
+import { Calendar, Target, Flag, Building, Briefcase } from "lucide-react"
 
 export function ProjectHeader({ project }: { project: any }) {
   const calculateProgress = (tasks: any[]) => {
@@ -60,6 +60,12 @@ export function ProjectHeader({ project }: { project: any }) {
                 <Flag className="h-4 w-4" />
                 <span>Deadline: {new Date(project.endDate).toLocaleDateString()}</span>
               </div>
+              {project.clientName && (
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Briefcase className="h-4 w-4" />
+                  <span>Client: {project.clientName}</span>
+                </div>
+              )}
               {project.githubUrl && (
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Target className="h-4 w-4" />

@@ -14,6 +14,7 @@ export const projectSchema = z.object({
   }),
   githubUrl: z.string().optional(),
   liveUrl: z.string().optional(),
+  clientName: z.string().optional(),
 })
 
 export type ProjectFormValues = z.infer<typeof projectSchema>

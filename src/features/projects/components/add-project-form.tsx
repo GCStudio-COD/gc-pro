@@ -51,6 +51,7 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
       endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : "",
       priority: initialData?.priority || "Medium",
       status: initialData?.status || "Planning",
+      clientName: initialData?.clientName || "",
       githubUrl: initialData?.githubUrl || "",
       liveUrl: initialData?.liveUrl || "",
     },
@@ -67,6 +68,7 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
         endDate: new Date(data.endDate).toISOString(),
         priority: data.priority,
         status: data.status,
+        clientName: data.clientName,
         githubUrl: data.githubUrl,
         liveUrl: data.liveUrl
       }
@@ -104,6 +106,27 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
     }
   }
 
+  async function handleDelete() {
+    if (!initialData?.id) return;
+    if (!confirm("Are you sure you want to delete this project? This will permanently delete the project and ALL related tasks and notes. This action cannot be undone.")) return;
+    
+    setIsSubmitting(true)
+    try {
+      const res = await fetchApi(`/projects/${initialData.id}`, { method: 'DELETE' }, effectiveRole)
+      if (res.ok) {
+        toast.success("Project deleted successfully")
+        router.push(pathname?.includes('/admin') ? '/admin/projects' : '/pm/projects')
+      } else {
+        toast.error("Failed to delete project")
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error("An error occurred")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <Card className="w-full max-w-3xl mx-auto">
       <CardHeader>
@@ -124,6 +147,20 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
                   <FormLabel>Project Name</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Website Redesign" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="clientName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Client Name (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. Acme Corp" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -259,11 +296,19 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
               />
             </div>
 
-            <div className="flex justify-end gap-4 mt-8 pt-6 border-t">
-              <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
-                Cancel
-              </Button>
-              <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
+            <div className="flex justify-between mt-8 pt-6 border-t">
+              <div>
+                {initialData?.id && (effectiveRole === 'admin' || effectiveRole === 'project-manager') && (
+                  <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
+                    Delete Project
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-4">
+                <Button type="button" variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+                  Cancel
+                </Button>
+                <Button type="submit" className="w-full md:w-auto" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -273,6 +318,7 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
                   initialData ? "Update Project" : "Create Project"
                 )}
               </Button>
+              </div>
             </div>
           </form>
         </Form>
