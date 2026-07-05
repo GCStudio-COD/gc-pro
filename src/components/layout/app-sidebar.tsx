@@ -80,7 +80,7 @@ export function AppSidebar() {
             <Hexagon className="h-5 w-5 group-data-[collapsible=none]:h-6 group-data-[collapsible=none]:w-6 fill-current transition-all duration-200" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
-            Nexus<span className="text-primary opacity-80">SaaS</span>
+            Nuvio
           </span>
         </div>
       </SidebarHeader>

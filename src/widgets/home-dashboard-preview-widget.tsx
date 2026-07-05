@@ -46,7 +46,7 @@ export function HomeDashboardPreviewWidget() {
           <div className="hidden md:flex w-64 flex-col border-r bg-muted/20 p-4">
             <div className="flex items-center gap-2 px-2 mb-8 mt-2">
               <div className="h-6 w-6 rounded bg-primary" />
-              <span className="font-bold tracking-tight">NexusPlatform</span>
+              <span className="font-bold tracking-tight">Nuvio</span>
             </div>
             <nav className="space-y-2 flex-1">
               <div className="flex items-center gap-3 rounded-lg bg-primary/10 px-3 py-2 text-primary font-medium">

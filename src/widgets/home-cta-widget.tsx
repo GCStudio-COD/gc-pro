@@ -24,7 +24,7 @@ export function HomeCTAWidget() {
             Ready to simplify employee and project management?
           </h2>
           <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-            Join thousands of modern enterprises using NexusPlatform to scale their workforce without the friction.
+            Join thousands of modern enterprises using Nuvio to scale their workforce without the friction.
           </p>
           
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full sm:w-auto">

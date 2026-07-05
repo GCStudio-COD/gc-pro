@@ -22,7 +22,7 @@ export function HomeHeroWidget() {
           className="mb-8 flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary backdrop-blur-md font-medium"
         >
           <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse" />
-          NexusPlatform v2.0 is now live
+          Nuvio v2.0 is now live
         </motion.div>
 
         {/* Heading */}

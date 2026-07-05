@@ -45,7 +45,7 @@ export function AdminWelcomeWidget() {
             <div>
               <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {userName}</h2>
               <p className="text-muted-foreground">
-                Here's what's happening across NexusPlatform today.
+                Here's what's happening across Nuvio today.
               </p>
             </div>
             

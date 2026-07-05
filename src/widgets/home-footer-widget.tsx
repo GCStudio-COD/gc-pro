@@ -9,7 +9,7 @@ export function HomeFooterWidget() {
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <div className="h-6 w-6 rounded bg-primary" />
-              <span className="font-bold tracking-tight text-xl">NexusPlatform</span>
+              <span className="font-bold tracking-tight text-xl">Nuvio</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
               The modern OS for your entire workforce. Designed for speed and scalability.
@@ -48,7 +48,7 @@ export function HomeFooterWidget() {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border/50 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} NexusPlatform Inc. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Nuvio Inc. All rights reserved.</p>
           <div className="mt-4 md:mt-0 flex items-center gap-4">
             <span>Version 2.0.1</span>
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" title="All systems operational" />

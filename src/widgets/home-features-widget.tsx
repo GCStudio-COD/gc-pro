@@ -17,7 +17,7 @@ export function HomeFeaturesWidget() {
     <section className="py-24 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         <div className="text-center mb-16 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Why choose NexusPlatform?</h2>
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Why choose Nuvio?</h2>
           <p className="text-lg text-muted-foreground">
             We obsessed over the details so you don't have to.
           </p>
