@@ -73,13 +73,13 @@ export function AppSidebar() {
   const activeItems = effectiveRole === 'admin' ? adminItems : effectiveRole === 'project-manager' ? pmItems : employeeItems
 
   return (
-    <Sidebar collapsible="none" className="bg-[#2A2A2A] border-none text-white h-screen">
-      <SidebarHeader className="h-20 flex items-center justify-center p-0">
-        <div className="flex items-center justify-center w-full h-full gap-3 mt-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0">
-            <Hexagon className="h-6 w-6 fill-current" />
+    <Sidebar collapsible="none">
+      <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 p-0">
+        <div className="flex items-center justify-center w-full h-full group-data-[collapsible=none]:px-4 group-data-[collapsible=none]:justify-start gap-3">
+          <div className="flex h-8 w-8 group-data-[collapsible=none]:h-10 group-data-[collapsible=none]:w-10 items-center justify-center rounded-lg group-data-[collapsible=none]:rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0 transition-all duration-200">
+            <Hexagon className="h-5 w-5 group-data-[collapsible=none]:h-6 group-data-[collapsible=none]:w-6 fill-current transition-all duration-200" />
           </div>
-          <span className="font-bold text-xl tracking-tight text-white whitespace-nowrap">
+          <span className="font-bold text-xl tracking-tight text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
             Nexus<span className="text-primary opacity-80">SaaS</span>
           </span>
         </div>
@@ -89,18 +89,13 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2 group-data-[collapsible=icon]:hidden">
             {effectiveRole.replace('-', ' ')} Portal
           </SidebarGroupLabel>
-          <SidebarGroupContent className="mt-4">
-            <SidebarMenu className="gap-2">
+          <SidebarGroupContent>
+            <SidebarMenu>
               {activeItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
-                    asChild 
-                    tooltip={item.title} 
-                    isActive={pathname === item.url || (item.url !== '/' && pathname?.startsWith(item.url))}
-                    className="rounded-none py-6 h-14 hover:bg-transparent hover:text-white data-[active=true]:!bg-[#E5E5E5] data-[active=true]:!text-black text-white transition-none"
-                  >
-                    <Link href={item.url} className="flex items-center gap-4 px-6 font-bold tracking-widest text-[12px] uppercase">
-                      <item.icon className="h-5 w-5" strokeWidth={2.5} />
+                  <SidebarMenuButton asChild tooltip={item.title} isActive={pathname === item.url || (item.url !== '/' && pathname?.startsWith(item.url))}>
+                    <Link href={item.url}>
+                      <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
