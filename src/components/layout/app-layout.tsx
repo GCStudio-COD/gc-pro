@@ -1,12 +1,20 @@
 "use client"
 
-import { ReactNode } from "react"
+import { ReactNode, useEffect } from "react"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "./app-sidebar"
 import { AppHeader } from "./app-header"
 import { MeetingPopup } from "./meeting-popup"
+import { fetchApi } from "@/lib/api"
 
 export function AppLayout({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // The api.ts already handles redirecting to /login on 401
+      fetchApi('/auth/check').catch(() => {});
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <SidebarProvider>
       <AppSidebar />
