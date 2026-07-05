@@ -45,18 +45,60 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
   const [timeframe, setTimeframe] = useState("Daily")
   const [interpolation, setInterpolation] = useState<"monotone" | "default" | "linear" | "stepped">("monotone")
   const [realDailySeconds, setRealDailySeconds] = useState<number>(0)
+  const [realPresent, setRealPresent] = useState<number>(0)
+  const [realAbsent, setRealAbsent] = useState<number>(0)
 
   useEffect(() => {
     const effectiveRole = typeof window !== 'undefined' && window.location.pathname.startsWith('/employee') ? 'employee' : 'admin'
-    fetchApi('/attendance/status', {}, effectiveRole)
-      .then(res => res.json())
-      .then(data => {
-        if (data && typeof data.accumulatedShiftSeconds === 'number') {
-          setRealDailySeconds(data.accumulatedShiftSeconds)
-        }
-      })
-      .catch(console.error)
-  }, [])
+    
+    if (effectiveRole === 'employee') {
+      fetchApi('/attendance/status', {}, effectiveRole)
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.accumulatedShiftSeconds === 'number') {
+            setRealDailySeconds(data.accumulatedShiftSeconds)
+            setRealPresent(1)
+            setRealAbsent(0)
+          }
+        })
+        .catch(console.error)
+    } else {
+      // Admin/PM: Fetch all attendance and filter by selectedEmployee
+      fetchApi('/attendance', {}, effectiveRole)
+        .then(res => res.json())
+        .then(logs => {
+          if (!Array.isArray(logs)) return;
+          
+          let totalSeconds = 0;
+          let presentCount = 0;
+          
+          // Filter logs for today
+          const todayStr = new Date().toDateString();
+          const todayLogs = logs.filter(log => new Date(log.date).toDateString() === todayStr);
+          
+          let employeesWithLogs = new Set();
+          
+          for (const log of todayLogs) {
+            if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+            
+            totalSeconds += (log.durationSeconds || 0);
+            employeesWithLogs.add(log.employeeId);
+          }
+          
+          presentCount = employeesWithLogs.size;
+          
+          // Calculate average if "all" is selected
+          if (selectedEmployee === "all" && presentCount > 0) {
+            totalSeconds = Math.floor(totalSeconds / presentCount);
+          }
+          
+          setRealDailySeconds(totalSeconds);
+          setRealPresent(presentCount);
+          setRealAbsent(0); // We would need total employee count to calculate absent properly
+        })
+        .catch(console.error)
+    }
+  }, [selectedEmployee])
 
   // Update date range when timeframe changes
   useEffect(() => {
@@ -82,9 +124,9 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
   }
 
   if (timeframe === "Daily") {
-    totalTime = selectedEmployee === "all" ? formatSeconds(realDailySeconds) : (selectedEmployee === "alice" ? "9h 15m" : selectedEmployee === "bob" ? "6h 45m" : formatSeconds(realDailySeconds))
-    present = selectedEmployee === "bob" ? "0" : "1" // Bob was absent today
-    absent = selectedEmployee === "bob" ? "1" : "0"
+    totalTime = formatSeconds(realDailySeconds)
+    present = realPresent.toString()
+    absent = realAbsent.toString()
   } else if (timeframe === "Weekly") {
     totalTime = selectedEmployee === "alice" ? "45h 30m" : selectedEmployee === "bob" ? "33h 00m" : "40h 00m"
     present = selectedEmployee === "bob" ? "4" : "5"

@@ -10,6 +10,8 @@ import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect } from "react"
+import { fetchApi } from "@/lib/api"
 
 export function AttendanceFeature() {
   const { role } = useRoleStore()
@@ -19,8 +21,22 @@ export function AttendanceFeature() {
     to: new Date()
   })
   const [selectedEmployee, setSelectedEmployee] = useState("all")
+  const [employees, setEmployees] = useState<any[]>([])
   
   const effectiveRole = pathname?.startsWith('/employee') ? 'employee' : role
+
+  useEffect(() => {
+    if (effectiveRole !== 'employee') {
+      fetchApi('/employees', {}, effectiveRole)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setEmployees(data)
+          }
+        })
+        .catch(console.error)
+    }
+  }, [effectiveRole])
 
   return (
     <div className="flex flex-col p-4 md:p-8 w-full max-w-[1600px] mx-auto">
@@ -51,9 +67,11 @@ export function AttendanceFeature() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Employees (Average)</SelectItem>
-                    <SelectItem value="alice">Alice Johnson</SelectItem>
-                    <SelectItem value="bob">Bob Smith</SelectItem>
-                    <SelectItem value="charlie">Charlie Brown</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.id}>
+                        {emp.firstName} {emp.lastName}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
