@@ -66,7 +66,7 @@ export function AttendanceFeature() {
                     <SelectValue placeholder="Select Employee" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Employees (Average)</SelectItem>
+                    <SelectItem value="all">All Employees (Total)</SelectItem>
                     {employees.map(emp => (
                       <SelectItem key={emp.id} value={emp.id}>
                         {emp.firstName} {emp.lastName}

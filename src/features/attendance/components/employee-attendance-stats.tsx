@@ -89,7 +89,8 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
           
           // Calculate average if "all" is selected
           if (selectedEmployee === "all" && presentCount > 0) {
-            totalSeconds = Math.floor(totalSeconds / presentCount);
+            // We show total instead of average now as requested
+            // totalSeconds = Math.floor(totalSeconds / presentCount);
           }
           
           setRealDailySeconds(totalSeconds);
