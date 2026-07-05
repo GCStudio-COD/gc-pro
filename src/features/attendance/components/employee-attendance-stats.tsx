@@ -22,6 +22,7 @@ import {
   LineController
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
+import { fetchApi } from "@/lib/api"
 
 ChartJS.register(
   CategoryScale,
@@ -43,6 +44,19 @@ interface EmployeeAttendanceStatsProps {
 export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRange, selectedEmployee = "all" }: EmployeeAttendanceStatsProps) {
   const [timeframe, setTimeframe] = useState("Daily")
   const [interpolation, setInterpolation] = useState<"monotone" | "default" | "linear" | "stepped">("monotone")
+  const [realDailySeconds, setRealDailySeconds] = useState<number>(0)
+
+  useEffect(() => {
+    const effectiveRole = typeof window !== 'undefined' && window.location.pathname.startsWith('/employee') ? 'employee' : 'admin'
+    fetchApi('/attendance/status', {}, effectiveRole)
+      .then(res => res.json())
+      .then(data => {
+        if (data && typeof data.accumulatedShiftSeconds === 'number') {
+          setRealDailySeconds(data.accumulatedShiftSeconds)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   // Update date range when timeframe changes
   useEffect(() => {
@@ -61,8 +75,14 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
   let present = "5"
   let absent = "0"
 
+  const formatSeconds = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    return `${hrs}h ${mins.toString().padStart(2, '0')}m`;
+  }
+
   if (timeframe === "Daily") {
-    totalTime = selectedEmployee === "alice" ? "9h 15m" : selectedEmployee === "bob" ? "6h 45m" : "8h 00m"
+    totalTime = selectedEmployee === "all" ? formatSeconds(realDailySeconds) : (selectedEmployee === "alice" ? "9h 15m" : selectedEmployee === "bob" ? "6h 45m" : formatSeconds(realDailySeconds))
     present = selectedEmployee === "bob" ? "0" : "1" // Bob was absent today
     absent = selectedEmployee === "bob" ? "1" : "0"
   } else if (timeframe === "Weekly") {

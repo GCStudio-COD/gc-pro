@@ -106,9 +106,10 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
     }
   }
 
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+
   async function handleDelete() {
     if (!initialData?.id) return;
-    if (!confirm("Are you sure you want to delete this project? This will permanently delete the project and ALL related tasks and notes. This action cannot be undone.")) return;
     
     setIsSubmitting(true)
     try {
@@ -299,9 +300,23 @@ export function AddProjectForm({ initialData }: { initialData?: Partial<ProjectF
             <div className="flex justify-between mt-8 pt-6 border-t">
               <div>
                 {initialData?.id && (effectiveRole === 'admin' || effectiveRole === 'project-manager') && (
-                  <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
-                    Delete Project
-                  </Button>
+                  <>
+                    {!showConfirmDelete ? (
+                      <Button type="button" variant="destructive" onClick={() => setShowConfirmDelete(true)} disabled={isSubmitting}>
+                        Delete Project
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-destructive font-medium">Are you sure?</span>
+                        <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>
+                          Yes, Delete
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setShowConfirmDelete(false)} disabled={isSubmitting}>
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="flex gap-4">
