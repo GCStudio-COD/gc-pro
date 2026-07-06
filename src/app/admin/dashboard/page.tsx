@@ -17,7 +17,7 @@ import { AdminRecentActivityWidget } from "@/widgets/admin-recent-activity-widge
 export default function AdminDashboardPage() {
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-[1400px] mx-auto">
+      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
         
         {/* Top: Welcome & High-level stats */}
         <div className="grid grid-cols-1 gap-6">

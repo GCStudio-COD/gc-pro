@@ -15,7 +15,7 @@ import { PmRecentActivitiesWidget } from "@/widgets/pm-recent-activities-widget"
 export default function ProjectManagerDashboardPage() {
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full max-w-[1400px] mx-auto">
+      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
         
         {/* Top: Welcome & High-level stats */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -71,7 +71,7 @@ export function AppHeader() {
   const profilePath = effectiveRole === 'project-manager' ? '/pm/profile' : `/${effectiveRole}/profile`
 
   return (
-    <header className="h-14 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 sticky top-0 z-10 w-full transition-all">
+    <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 sticky top-0 z-10 w-full transition-all">
       <div className="flex items-center gap-4">
       </div>
 

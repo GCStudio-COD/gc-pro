@@ -38,30 +38,29 @@ export function AdminWelcomeWidget() {
       transition={{ duration: 0.5 }}
       className="col-span-1 lg:col-span-full"
     >
-      <Card className="border-none bg-gradient-to-r from-primary/10 via-background to-background shadow-none overflow-hidden relative">
-        <div className="absolute left-0 top-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 -translate-x-1/3" />
+      <Card className="border-none bg-black dark:bg-white text-white dark:text-black shadow-none overflow-hidden relative">
         <CardContent className="p-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
             <div>
               <h2 className="text-3xl font-bold tracking-tight mb-2">Welcome back, {userName}</h2>
-              <p className="text-muted-foreground">
+              <p className="text-white/70 dark:text-black/70">
                 Here's what's happening across Nuvio today.
               </p>
             </div>
             
-            <div className="flex items-center gap-6 text-sm font-medium">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-muted rounded-md"><Calendar className="h-4 w-4" /></div>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 text-sm font-medium">
+              <div className="flex items-center gap-3 bg-white/5 dark:bg-sidebar border border-white/10 dark:text-white px-4 py-2.5 rounded-xl">
+                <div className="p-2 bg-white/10 rounded-md"><Calendar className="h-4 w-4" /></div>
                 <div>
-                  <p className="text-muted-foreground text-xs">Today's Date</p>
+                  <p className="text-white/70 text-xs">Today's Date</p>
                   <p>{date}</p>
                 </div>
               </div>
-              <div className="w-px h-8 bg-border hidden sm:block" />
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-muted rounded-md"><Sun className="h-4 w-4 text-amber-500" /></div>
+              
+              <div className="flex items-center gap-3 bg-white/5 dark:bg-sidebar border border-white/10 dark:text-white px-4 py-2.5 rounded-xl">
+                <div className="p-2 bg-white/10 rounded-md"><Sun className="h-4 w-4 text-amber-500" /></div>
                 <div>
-                  <p className="text-muted-foreground text-xs">System Status</p>
+                  <p className="text-white/70 text-xs">System Status</p>
                   <p className="text-emerald-500 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" /> All Operational
                   </p>
