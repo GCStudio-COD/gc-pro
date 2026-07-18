@@ -12,10 +12,10 @@ import { usePathname } from "next/navigation"
 const COLORS = ["hsl(var(--primary))", "#3b82f6", "#f59e0b", "#10b981"]
 
 export function EmployeeTaskProgressWidget() {
-  const [data, setData] = useState<{name: string, value: number}[]>([])
+  const [data, setData] = useState<{ name: string, value: number }[]>([])
   const { role } = useRoleStore()
   const pathname = usePathname()
-  
+
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
@@ -34,7 +34,7 @@ export function EmployeeTaskProgressWidget() {
               counts["Done"]++
             }
           })
-          
+
           setData([
             { name: "To Do", value: counts["To Do"] },
             { name: "In Progress", value: counts["In Progress"] },

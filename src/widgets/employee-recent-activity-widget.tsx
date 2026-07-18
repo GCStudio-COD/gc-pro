@@ -1,16 +1,41 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { GitCommit, FileEdit, CheckSquare } from "lucide-react"
-
-const activities = [
-  { action: "Pushed 3 commits to", target: "feature/auth", time: "1 hour ago", icon: GitCommit, color: "text-blue-500" },
-  { action: "Updated status of", target: "TASK-412", time: "3 hours ago", icon: FileEdit, color: "text-amber-500" },
-  { action: "Completed", target: "Security Training", time: "Yesterday", icon: CheckSquare, color: "text-emerald-500" },
-]
+import { fetchApi } from "@/lib/api"
+import { useRoleStore } from "@/store/use-role-store"
+import { usePathname } from "next/navigation"
 
 export function EmployeeRecentActivityWidget() {
+  const [activities, setActivities] = useState<any[]>([])
+  const { role } = useRoleStore()
+  const pathname = usePathname()
+  
+  let effectiveRole = role
+  if (pathname.startsWith('/admin')) effectiveRole = 'admin'
+  else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
+  else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
+
+  useEffect(() => {
+    fetchApi('/tasks', {}, effectiveRole)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const formatted = data.slice(-3).reverse().map(t => ({
+            action: t.status === 'Done' || t.status === 'Completed' ? "Completed task" : "Updated task",
+            target: t.title || "Unknown Task",
+            time: "Recently",
+            icon: t.status === 'Done' || t.status === 'Completed' ? CheckSquare : FileEdit,
+            color: t.status === 'Done' || t.status === 'Completed' ? "text-emerald-500" : "text-amber-500"
+          }))
+          setActivities(formatted)
+        }
+      })
+      .catch(console.error)
+  }, [effectiveRole])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -24,7 +49,7 @@ export function EmployeeRecentActivityWidget() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {activities.map((act, i) => {
+            {activities.length > 0 ? activities.map((act, i) => {
               const Icon = act.icon
               return (
                 <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50">
@@ -39,7 +64,9 @@ export function EmployeeRecentActivityWidget() {
                   </div>
                 </div>
               )
-            })}
+            }) : (
+              <div className="text-sm text-muted-foreground text-center py-4">No recent activity found.</div>
+            )}
           </div>
         </CardContent>
       </Card>

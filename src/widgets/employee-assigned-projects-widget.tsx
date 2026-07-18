@@ -1,16 +1,44 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Briefcase } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-
-const projects = [
-  { name: "Website Redesign", role: "Lead Developer", progress: 85, health: "bg-emerald-500" },
-  { name: "Database Migration", role: "Contributor", progress: 42, health: "bg-amber-500" },
-]
+import { fetchApi } from "@/lib/api"
+import { useRoleStore } from "@/store/use-role-store"
+import { usePathname } from "next/navigation"
 
 export function EmployeeAssignedProjectsWidget() {
+  const [projects, setProjects] = useState<any[]>([])
+  const { role } = useRoleStore()
+  const pathname = usePathname()
+  
+  let effectiveRole = role
+  if (pathname.startsWith('/admin')) effectiveRole = 'admin'
+  else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
+  else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
+
+  useEffect(() => {
+    fetchApi('/projects', {}, effectiveRole)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const formatted = data.slice(0, 3).map(p => {
+            const isCompleted = p.status === 'Completed' || p.status === 'Done';
+            return {
+              name: p.name || 'Untitled Project',
+              role: 'Team Member',
+              progress: isCompleted ? 100 : (p.progress || 0),
+              health: isCompleted ? 'bg-emerald-500' : 'bg-amber-500'
+            }
+          })
+          setProjects(formatted)
+        }
+      })
+      .catch(console.error)
+  }, [effectiveRole])
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,7 +54,7 @@ export function EmployeeAssignedProjectsWidget() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {projects.map((proj, i) => (
+            {projects.length > 0 ? projects.map((proj, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
@@ -40,7 +68,9 @@ export function EmployeeAssignedProjectsWidget() {
                 </div>
                 <Progress value={proj.progress} className="h-1.5 ml-4" />
               </div>
-            ))}
+            )) : (
+              <div className="text-sm text-muted-foreground text-center py-4">No assigned projects.</div>
+            )}
           </div>
         </CardContent>
       </Card>

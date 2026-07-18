@@ -24,12 +24,14 @@ import { Plus, Loader2 } from "lucide-react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { fetchApi } from "@/lib/api"
 import { toast } from "sonner"
 
 export function TaskList() {
   const pathname = usePathname()
   const { role } = useRoleStore()
+  const { userId } = useAuthStore()
   
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
@@ -49,7 +51,10 @@ export function TaskList() {
     // Poll for updates every 3 seconds to keep data fresh without manual refresh
     const intervalId = setInterval(async () => {
       try {
-        const res = await fetchApi("/tasks", {}, effectiveRole)
+        const endpoint = (pathname === '/pm/my-tasks' && userId) 
+          ? `/tasks?assigneeId=${userId}` 
+          : "/tasks"
+        const res = await fetchApi(endpoint, {}, effectiveRole)
         if (res.ok) {
           setTasks(await res.json())
         }
@@ -59,15 +64,15 @@ export function TaskList() {
     }, 3000)
     
     return () => clearInterval(intervalId)
-  }, [effectiveRole, pathname])
+  }, [effectiveRole, pathname, userId])
 
   const fetchTasks = async () => {
     try {
       setLoading(true)
-      // Note: for /pm/my-tasks or employee, we might need to filter by current user's ID
-      // but without the ID easily accessible in this scope, we will fetch all and rely on 
-      // the backend (if we pass an assigneeId) or just show all for now since it's a demo.
-      const res = await fetchApi("/tasks", {}, effectiveRole)
+      const endpoint = (pathname === '/pm/my-tasks' && userId) 
+        ? `/tasks?assigneeId=${userId}` 
+        : "/tasks"
+      const res = await fetchApi(endpoint, {}, effectiveRole)
       if (res.ok) {
         setTasks(await res.json())
       } else {

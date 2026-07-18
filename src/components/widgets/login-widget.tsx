@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 
 export function LoginWidget() {
   const router = useRouter()
@@ -20,6 +20,7 @@ export function LoginWidget() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isVerifyingSSO, setIsVerifyingSSO] = useState(true)
+  const [showPassword, setShowPassword] = useState(false)
 
   useEffect(() => {
     const token = searchParams.get("token")
@@ -142,13 +143,27 @@ export function LoginWidget() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
               </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <div className="flex justify-end">
+                <a href="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                  Forgot password?
+                </a>
+              </div>
             </div>
             
             {error && (

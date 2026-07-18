@@ -24,16 +24,35 @@ export function EmployeeWeeklyProductivityWidget() {
       .then(res => res.json())
       .then(logs => {
         if (Array.isArray(logs)) {
-          // Mock focus calculation based on the number of logs
-          // We will group by the last 4 weeks. For simplicity, we just create 4 mock data points.
-          // In a real app we'd group logs by week and calculate actual productivity.
-          const count = logs.length;
-          setData([
-            { week: "W1", focus: 75 + Math.min(count, 10) },
-            { week: "W2", focus: 80 + Math.min(count, 15) },
-            { week: "W3", focus: 85 + Math.min(count, 10) },
-            { week: "W4", focus: 90 + Math.min(count, 5) },
-          ])
+          const now = new Date()
+          const weeksData = [
+            { week: "W1", focus: 0, seconds: 0 },
+            { week: "W2", focus: 0, seconds: 0 },
+            { week: "W3", focus: 0, seconds: 0 },
+            { week: "W4", focus: 0, seconds: 0 }
+          ]
+          
+          logs.forEach((log: any) => {
+            if (log.durationSeconds && log.startTime) {
+              const logDate = new Date(log.startTime)
+              const diffTime = Math.abs(now.getTime() - logDate.getTime())
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              
+              if (diffDays <= 7) weeksData[3].seconds += log.durationSeconds
+              else if (diffDays <= 14) weeksData[2].seconds += log.durationSeconds
+              else if (diffDays <= 21) weeksData[1].seconds += log.durationSeconds
+              else if (diffDays <= 28) weeksData[0].seconds += log.durationSeconds
+            }
+          })
+          
+          const targetSecondsPerWeek = 40 * 3600
+          
+          const finalData = weeksData.map(w => ({
+            week: w.week,
+            focus: Math.min(100, Math.round((w.seconds / targetSecondsPerWeek) * 100)) || 0
+          }))
+          
+          setData(finalData)
         }
       })
       .catch(console.error)

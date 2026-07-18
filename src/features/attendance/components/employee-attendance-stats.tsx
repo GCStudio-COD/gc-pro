@@ -47,59 +47,112 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
   const [realDailySeconds, setRealDailySeconds] = useState<number>(0)
   const [realPresent, setRealPresent] = useState<number>(0)
   const [realAbsent, setRealAbsent] = useState<number>(0)
+  const [chartData, setChartData] = useState<{labels: string[], expected: number[], actual: number[]}>({
+    labels: [],
+    expected: [],
+    actual: []
+  })
 
   useEffect(() => {
     const effectiveRole = typeof window !== 'undefined' && window.location.pathname.startsWith('/employee') ? 'employee' : 'admin'
     
-    if (effectiveRole === 'employee') {
-      fetchApi('/attendance/status', {}, effectiveRole)
-        .then(res => res.json())
-        .then(data => {
-          if (data && typeof data.accumulatedShiftSeconds === 'number') {
-            setRealDailySeconds(data.accumulatedShiftSeconds)
-            setRealPresent(1)
-            setRealAbsent(0)
-          }
-        })
-        .catch(console.error)
-    } else {
-      // Admin/PM: Fetch all attendance and filter by selectedEmployee
-      fetchApi('/attendance', {}, effectiveRole)
-        .then(res => res.json())
-        .then(logs => {
-          if (!Array.isArray(logs)) return;
-          
-          let totalSeconds = 0;
-          let presentCount = 0;
-          
-          // Filter logs for today
-          const todayStr = new Date().toDateString();
-          const todayLogs = logs.filter(log => new Date(log.date).toDateString() === todayStr);
-          
-          let employeesWithLogs = new Set();
-          
-          for (const log of todayLogs) {
-            if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+    fetchApi('/attendance', {}, effectiveRole)
+      .then(res => res.json())
+      .then(logs => {
+        if (!Array.isArray(logs)) return;
+        
+        let totalSeconds = 0;
+        let distinctPresences = new Set();
+        
+        let filteredLogs = logs;
+        
+        // Filter by selectedDateRange
+        if (selectedDateRange?.from) {
+          const fromTime = startOfDay(selectedDateRange.from).getTime();
+          const toTime = selectedDateRange.to 
+            ? startOfDay(selectedDateRange.to).getTime() + 86400000 - 1 // end of day
+            : fromTime + 86400000 - 1;
             
-            totalSeconds += (log.durationSeconds || 0);
-            employeesWithLogs.add(log.employeeId);
+          filteredLogs = logs.filter(log => {
+            const logTime = new Date(log.date || log.checkInTime).getTime();
+            return logTime >= fromTime && logTime <= toTime;
+          });
+        }
+        
+        let uniqueEmployees = new Set();
+        
+        for (const log of filteredLogs) {
+          if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+          
+          let duration = log.durationSeconds || 0;
+          // Include time for active shifts
+          if (!log.checkOutTime && log.checkInTime) {
+            const now = new Date().getTime();
+            const checkIn = new Date(log.checkInTime).getTime();
+            if (now > checkIn) {
+              duration += Math.floor((now - checkIn) / 1000);
+            }
           }
           
-          presentCount = employeesWithLogs.size;
+          totalSeconds += duration;
           
-          // Calculate average if "all" is selected
-          if (selectedEmployee === "all" && presentCount > 0) {
-            // We show total instead of average now as requested
-            // totalSeconds = Math.floor(totalSeconds / presentCount);
+          const dayStr = new Date(log.date || log.checkInTime).toDateString();
+          distinctPresences.add(`${log.employeeId}-${dayStr}`);
+          uniqueEmployees.add(log.employeeId);
+        }
+        
+        setRealDailySeconds(totalSeconds);
+        setRealPresent(distinctPresences.size);
+        setRealAbsent(0); // Absent requires knowing expected work days, keeping it 0 for now
+        
+        // Calculate chart data
+        const numEmployees = selectedEmployee === "all" ? Math.max(1, uniqueEmployees.size) : 1;
+        
+        const labels: string[] = [];
+        const expected: number[] = [];
+        const actual: number[] = [];
+        const actualHoursByDate: Record<string, number> = {};
+        
+        for (const log of filteredLogs) {
+          if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+          let duration = log.durationSeconds || 0;
+          if (!log.checkOutTime && log.checkInTime) {
+            const now = new Date().getTime();
+            const checkIn = new Date(log.checkInTime).getTime();
+            if (now > checkIn) {
+              duration += Math.floor((now - checkIn) / 1000);
+            }
           }
-          
-          setRealDailySeconds(totalSeconds);
-          setRealPresent(presentCount);
-          setRealAbsent(0); // We would need total employee count to calculate absent properly
-        })
-        .catch(console.error)
-    }
-  }, [selectedEmployee])
+          const dayStr = new Date(log.date || log.checkInTime).toDateString();
+          if (!actualHoursByDate[dayStr]) actualHoursByDate[dayStr] = 0;
+          actualHoursByDate[dayStr] += (duration / 3600);
+        }
+        
+        if (selectedDateRange?.from) {
+          const fromTime = startOfDay(selectedDateRange.from).getTime();
+          const toTime = selectedDateRange.to 
+            ? startOfDay(selectedDateRange.to).getTime() + 86400000 - 1
+            : fromTime + 86400000 - 1;
+            
+          let currentDayTime = fromTime;
+          while (currentDayTime <= toTime) {
+            const currentDay = new Date(currentDayTime);
+            const dayStr = currentDay.toDateString();
+            
+            labels.push(format(currentDay, "MMM d"));
+            
+            const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+            expected.push(isWeekend ? 0 : 8 * numEmployees);
+            actual.push(actualHoursByDate[dayStr] || 0);
+            
+            currentDayTime += 86400000;
+          }
+        }
+        
+        setChartData({ labels, expected, actual });
+      })
+      .catch(console.error)
+  }, [selectedEmployee, selectedDateRange])
 
   // Update date range when timeframe changes
   useEffect(() => {
@@ -113,67 +166,33 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
     }
   }, [timeframe, setSelectedDateRange])
 
-  // Mock data calculation based on timeframe
-  let totalTime = "40h 30m"
-  let present = "5"
-  let absent = "0"
-
   const formatSeconds = (seconds: number) => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     return `${hrs}h ${mins.toString().padStart(2, '0')}m`;
   }
 
-  if (timeframe === "Daily") {
-    totalTime = formatSeconds(realDailySeconds)
-    present = realPresent.toString()
-    absent = realAbsent.toString()
-  } else if (timeframe === "Weekly") {
-    totalTime = selectedEmployee === "alice" ? "45h 30m" : selectedEmployee === "bob" ? "33h 00m" : "40h 00m"
-    present = selectedEmployee === "bob" ? "4" : "5"
-    absent = selectedEmployee === "bob" ? "1" : "0"
-  } else if (timeframe === "Monthly") {
-    totalTime = selectedEmployee === "alice" ? "185h 45m" : selectedEmployee === "bob" ? "142h 15m" : "160h 00m"
-    present = selectedEmployee === "alice" ? "22" : selectedEmployee === "bob" ? "18" : "20"
-    absent = selectedEmployee === "alice" ? "0" : selectedEmployee === "bob" ? "4" : "2"
-  }
+  const totalTime = formatSeconds(realDailySeconds)
+  const present = realPresent.toString()
+  const absent = realAbsent.toString()
 
   // Determine header text format based on date range
   let dateString = "No date selected"
   if (selectedDateRange?.from) {
     if (!selectedDateRange.to || selectedDateRange.from.getTime() === selectedDateRange.to.getTime()) {
-      dateString = `Viewing data for: ${format(selectedDateRange.from, "dd/MM/yy")}`
+      dateString = `Viewing data for: ${format(selectedDateRange.from, "MMM d, yyyy")}`
     } else {
-      dateString = `Viewing data from: ${format(selectedDateRange.from, "dd/MM/yy")} to: ${format(selectedDateRange.to, "dd/MM/yy")}`
+      dateString = `Viewing data from: ${format(selectedDateRange.from, "MMM d, yyyy")} to: ${format(selectedDateRange.to, "MMM d, yyyy")}`
     }
   }
 
-  // Mock chart data for double line chart (Expected vs Actual Hours)
-  const labels = timeframe === "Daily" ? ["Today"] : timeframe === "Weekly" ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] : ["Week 1", "Week 2", "Week 3", "Week 4"]
-  
-  const dataset1Values = timeframe === "Daily" ? [8] : timeframe === "Weekly" ? [8, 8, 8, 8, 8, 0, 0] : [40, 40, 40, 40]
-  
-  // Base values
-  let baseActual = timeframe === "Daily" ? [8.25] : timeframe === "Weekly" ? [8.5, 7.5, 8, 4, 8.5, 0, 0] : [42, 38, 40, 44]
-  
-  // Modify values based on selected employee to simulate real data changes
-  if (selectedEmployee === "alice") {
-    baseActual = baseActual.map(v => v > 0 ? v + 1 : 0) // Alice overworks
-  } else if (selectedEmployee === "bob") {
-    baseActual = baseActual.map(v => v > 0 ? Math.max(0, v - 1.5) : 0) // Bob underworks
-  } else if (selectedEmployee === "charlie") {
-    baseActual = baseActual.map(v => v > 0 ? 8 : 0) // Charlie is perfectly on time
-  }
-
-  const dataset2Values = baseActual
-
   const data = {
-    labels: labels,
+    labels: chartData.labels,
     datasets: [
       {
         type: 'line' as const,
         label: 'Expected Hours',
-        data: dataset1Values,
+        data: chartData.expected,
         borderColor: '#ff6384', // pink/red line
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
         borderWidth: 3,
@@ -189,7 +208,7 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
       {
         type: 'line' as const,
         label: 'Actual Hours',
-        data: dataset2Values,
+        data: chartData.actual,
         borderColor: '#36a2eb', // blue line
         backgroundColor: 'rgba(54, 162, 235, 0.5)',
         borderWidth: 3,

@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const interval = setInterval(() => {
       // The api.ts already handles redirecting to /login on 401
-      fetchApi('/auth/check').catch(() => {});
+      fetchApi('/auth/check').catch(() => { });
     }, 3000);
     return () => clearInterval(interval);
   }, []);
@@ -20,7 +20,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <AppSidebar />
       <div className="flex flex-col flex-1 w-full min-h-screen">
         <AppHeader />
-        <main className="flex-1 p-4 sm:p-6 md:p-8 bg-muted/40">
+        <main className="flex-1 p-4 sm:p-0 xl:p-8 bg-muted/40">
           {children}
         </main>
       </div>

@@ -24,7 +24,14 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { fetchApi } from "@/lib/api"
 
-export function AttendanceTable() {
+import { DateRange } from "react-day-picker"
+
+interface AttendanceTableProps {
+  date?: DateRange;
+  selectedEmployee?: string;
+}
+
+export function AttendanceTable({ date, selectedEmployee }: AttendanceTableProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("All")
   const [attendance, setAttendance] = useState<any[]>([])
@@ -39,7 +46,38 @@ export function AttendanceTable() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const mapped = data.map(log => {
+          let filtered = data;
+          
+          if (date?.from) {
+            const fromTime = date.from.getTime();
+            const startOfFrom = new Date(fromTime);
+            startOfFrom.setHours(0, 0, 0, 0);
+            
+            const toTime = date.to ? date.to.getTime() : fromTime;
+            const endOfTo = new Date(toTime);
+            endOfTo.setHours(23, 59, 59, 999);
+            
+            filtered = filtered.filter(log => {
+              const logTime = new Date(log.date || log.checkInTime).getTime();
+              return logTime >= startOfFrom.getTime() && logTime <= endOfTo.getTime();
+            });
+          } else {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            filtered = filtered.filter(log => {
+              const logTime = new Date(log.date || log.checkInTime).getTime();
+              return logTime >= today.getTime() && logTime < tomorrow.getTime();
+            });
+          }
+          
+          if (selectedEmployee && selectedEmployee !== "all") {
+            filtered = filtered.filter(log => log.employeeId === selectedEmployee);
+          }
+
+          const mapped = filtered.map(log => {
             const formatTime = (d: string | null) => d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"
             
             return {
@@ -57,7 +95,7 @@ export function AttendanceTable() {
         }
       })
       .catch(console.error)
-  }, [effectiveRole])
+  }, [effectiveRole, date, selectedEmployee])
 
   const filteredAttendance = attendance.filter((record) => {
     const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase()) || 

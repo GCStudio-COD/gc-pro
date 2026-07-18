@@ -4,13 +4,32 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sun, CheckCircle2 } from "lucide-react"
+import { fetchApi } from "@/lib/api"
+import { useRoleStore } from "@/store/use-role-store"
+import { usePathname } from "next/navigation"
 
 export function EmployeeWelcomeWidget() {
   const [date, setDate] = useState("")
+  const [userName, setUserName] = useState("Employee")
+  
+  const { role } = useRoleStore()
+  const pathname = usePathname()
+  
+  let effectiveRole = role
+  if (pathname.startsWith('/admin')) effectiveRole = 'admin'
+  else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
+  else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
     setDate(new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }))
-  }, [])
+    
+    // Fetch user details
+    fetchApi('/auth/me', {}, effectiveRole)
+      .then(res => res.json())
+      .then(user => {
+        if (user && user.firstName) setUserName(user.firstName)
+      }).catch(console.error)
+  }, [effectiveRole])
   
   return (
     <motion.div
@@ -23,7 +42,7 @@ export function EmployeeWelcomeWidget() {
         <CardContent className="p-8 h-full flex flex-col justify-center relative z-10">
           <div className="flex items-center gap-2 text-emerald-500 mb-2">
             <Sun className="h-5 w-5" />
-            <span className="font-semibold text-sm tracking-tight uppercase">Good Morning, Alex</span>
+            <span className="font-semibold text-sm tracking-tight uppercase">Good Morning, {userName}</span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight mb-2">Ready to crush it today?</h2>
           <p className="text-white/70 dark:text-black/70 max-w-xl mb-6">

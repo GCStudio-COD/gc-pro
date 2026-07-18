@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/app-layout"
 import { LeaveApplicationWidget } from "@/components/widgets/leave-application-widget"
 import { LeaveApprovalsWidget } from "@/components/widgets/leave-approvals-widget"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { EmployeeLeaveBalanceWidget } from "@/widgets/employee-leave-balance-widget"
 
 export default function LeavesPage() {
   return (
@@ -11,6 +12,8 @@ export default function LeavesPage() {
           <h1 className="text-3xl font-bold tracking-tight">Leave Management</h1>
           <p className="text-muted-foreground mt-1">Manage your time off and review team requests.</p>
         </div>
+
+        <EmployeeLeaveBalanceWidget />
 
         <Tabs defaultValue="my-leaves" className="w-full">
           <TabsList className="mb-4">
