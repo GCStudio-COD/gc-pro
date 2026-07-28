@@ -14,10 +14,14 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, role
     ...(token ? { 'Authorization': `Bearer ${token}` } : {})
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  // Add cache: 'no-store' for GET requests to prevent aggressive Next.js caching
+  const fetchOptions: RequestInit = {
     ...options,
-    headers
-  });
+    headers,
+    ...( (!options.method || options.method === 'GET') ? { cache: 'no-store' as RequestCache } : {} )
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
 
   if (response.status === 401 && typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
     localStorage.removeItem('token');

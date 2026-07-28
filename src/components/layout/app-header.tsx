@@ -15,14 +15,17 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { fetchApi } from "@/lib/api"
 import { motion } from "framer-motion"
 
 export function AppHeader() {
   const { role } = useRoleStore()
+  const { logout } = useAuthStore()
   const pathname = usePathname()
+  const router = useRouter()
   
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
@@ -51,7 +54,11 @@ export function AppHeader() {
 
     fetchApi('/auth/me', {}, effectiveRole)
       .then(res => res.json())
-      .then(data => setUser(data))
+      .then(data => {
+        if (!data.error) {
+          setUser(data)
+        }
+      })
       .catch(err => console.error("Failed to fetch user", err))
   }, [effectiveRole])
 
@@ -128,7 +135,7 @@ export function AppHeader() {
               <Avatar className="h-9 w-9">
                 <AvatarImage src="/avatars/01.png" alt="User" />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {user ? `${user.firstName?.charAt(0) || ''}${user.lastName?.charAt(0) || ''}`.toUpperCase() : (effectiveRole === 'admin' ? 'AD' : effectiveRole === 'project-manager' ? 'PM' : 'EM')}
+                  {user?.firstName ? `${user.firstName.charAt(0)}${user.lastName?.charAt(0) || ''}`.toUpperCase() : (effectiveRole === 'admin' ? 'AD' : effectiveRole === 'project-manager' ? 'PM' : 'EM')}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -137,7 +144,7 @@ export function AppHeader() {
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {user ? `${user.firstName} ${user.lastName}` : 'Loading...'}
+                  {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : (user ? 'User' : 'Loading...')}
                 </p>
                 <p className="text-xs leading-none text-muted-foreground capitalize">
                   {user?.role || role.replace('-', ' ')}
@@ -153,7 +160,13 @@ export function AppHeader() {
             </DropdownMenuItem>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+            <DropdownMenuItem 
+              onClick={() => {
+                logout();
+                router.push('/login');
+              }}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
+            >
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
