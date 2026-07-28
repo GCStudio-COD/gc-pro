@@ -20,14 +20,14 @@ export function PmAssignedTeamsWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/departments', {}, effectiveRole)
+    fetchApi('/plaky/spaces', {}, effectiveRole)
       .then(res => res.json())
       .then(depts => {
         if (Array.isArray(depts)) {
           const mapped = depts.map((d, i) => ({
             team: d.name,
-            members: d.employees?.length || 0,
-            capacity: Math.min(100, Math.max(40, (d.employees?.length || 0) * 15)), // Mock capacity
+            members: d.boards?.length || 0,
+            capacity: Math.min(100, Math.max(40, (d.boards?.length || 0) * 15)), // Mock capacity
             color: i % 3 === 0 ? "bg-emerald-500" : i % 3 === 1 ? "bg-amber-500" : "bg-blue-500"
           }))
           setTeams(mapped.slice(0, 4))
@@ -58,7 +58,7 @@ export function PmAssignedTeamsWidget() {
                     </Avatar>
                     <span className="font-medium text-sm">{t.team}</span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{t.members} Members</span>
+                  <span className="text-xs text-muted-foreground">{t.members} Projects</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">

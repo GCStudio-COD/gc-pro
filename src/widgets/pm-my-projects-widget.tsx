@@ -23,23 +23,13 @@ export function PmMyProjectsWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
       .then(projects => {
         if (Array.isArray(projects)) {
-          let active = 0;
+          let active = projects.length;
           let completed = 0;
           let atRisk = 0;
-          const now = new Date();
-
-          projects.forEach(p => {
-            if (p.status === 'Completed') completed++;
-            else if (p.status === 'In Progress' || p.status === 'Planning') active++;
-
-            if (p.status !== 'Completed' && (p.priority === 'High' || p.priority === 'Critical' || new Date(p.endDate) < now)) {
-              atRisk++;
-            }
-          });
 
           setActiveProjects(active);
           setCompletedProjects(completed);

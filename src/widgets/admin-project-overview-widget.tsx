@@ -27,16 +27,11 @@ export function AdminProjectOverviewWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
       .then(projects => {
         if (Array.isArray(projects)) {
-          let active = 0, completed = 0, blocked = 0;
-          projects.forEach(p => {
-            if (p.status === 'Completed') completed++;
-            else if (p.status === 'On Hold') blocked++;
-            else active++;
-          });
+          let active = projects.length, completed = 0, blocked = 0;
           setData([
             { name: "Active", value: active },
             { name: "Completed", value: completed },

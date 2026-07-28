@@ -20,16 +20,16 @@ export function AdminDepartmentsWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/departments', {}, effectiveRole)
+    fetchApi('/plaky/spaces', {}, effectiveRole)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setDepartments(data.map(d => ({
             id: d.id,
             name: d.name,
-            head: d.head?.firstName ? `${d.head.firstName} ${d.head.lastName}` : "Unassigned",
-            employees: d.employees?.length || 0,
-            status: "Healthy" // Default status, could compute based on tasks later
+            head: d.description || "Department",
+            employees: d.boards?.length || 0,
+            status: "Healthy" 
           })))
         }
       }).catch(console.error)
@@ -57,10 +57,10 @@ export function AdminDepartmentsWidget() {
                 <div key={dept.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-muted/20 hover:bg-muted/50 transition-colors">
                   <div>
                     <h4 className="font-semibold">{dept.name}</h4>
-                    <p className="text-sm text-muted-foreground">Head: {dept.head}</p>
+                    <p className="text-sm text-muted-foreground">{dept.head}</p>
                   </div>
                   <div className="text-right hidden sm:block">
-                    <div className="font-medium">{dept.employees} Employees</div>
+                    <div className="font-medium">{dept.employees} Projects</div>
                   </div>
                   <Badge variant={dept.status === "Healthy" ? "default" : dept.status === "Warning" ? "secondary" : "destructive"} className="ml-4">
                     {dept.status}

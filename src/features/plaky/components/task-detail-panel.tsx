@@ -3,6 +3,7 @@ import { PlakyTask } from "@/schemas/plaky"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { fetchApi } from "@/lib/api"
 import { useAuthStore } from "@/store/use-auth-store"
+import { usePathname } from "next/navigation"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -38,7 +39,24 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
   const [assigneeId, setAssigneeId] = useState(task.assigneeId || "unassigned")
   const [customFields, setCustomFields] = useState<Record<string, any>>(task.customFields || {})
   const [employees, setEmployees] = useState<any[]>([])
+  
+  const pathname = usePathname()
   const { role } = useAuthStore()
+  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
+
+  let parsedColumns: any[] = [];
+  if (board?.columns) {
+    if (typeof board.columns === 'string') {
+      try { parsedColumns = JSON.parse(board.columns) } catch(e) {}
+    } else if (Array.isArray(board.columns)) {
+      parsedColumns = board.columns;
+    }
+  }
+
+  const getStdName = (id: string, defaultName: string) => {
+    const col = parsedColumns.find((c: any) => c.id === id);
+    return col ? col.name : defaultName;
+  }
 
   useEffect(() => {
     fetchApi('/employees', {}, role || undefined)
@@ -100,20 +118,21 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
           <div className="space-y-5">
             <div className="group space-y-2">
               <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Type className="w-3.5 h-3.5" /> Task Name
+                <Type className="w-3.5 h-3.5" /> {getStdName('std_taskName', 'Task Name')}
               </Label>
               <Input 
                 id="name" 
                 value={name} 
                 onChange={(e) => setName(e.target.value)} 
                 className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 focus:bg-background transition-all hover:bg-muted/70 font-medium"
+                readOnly={isEmployee}
               />
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="group space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Status
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {getStdName('std_status', 'Status')}
                 </Label>
                 <Select value={status} onValueChange={setStatus}>
                   <SelectTrigger className={`h-11 rounded-xl border-transparent focus:ring-1 focus:ring-primary/50 transition-all font-medium text-white ${statusColors[status] || 'bg-muted/40'}`}>
@@ -134,9 +153,9 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
               
               <div className="group space-y-2">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <UserCircle2 className="w-3.5 h-3.5" /> Assignee
+                  <UserCircle2 className="w-3.5 h-3.5" /> {getStdName('std_person', 'Assignee')}
                 </Label>
-                <Select value={assigneeId} onValueChange={setAssigneeId}>
+                <Select value={assigneeId} onValueChange={setAssigneeId} disabled={isEmployee}>
                   <SelectTrigger className="h-11 rounded-xl bg-muted/40 border-transparent focus:ring-1 focus:ring-primary/50 hover:bg-muted/70 transition-all font-medium">
                     <SelectValue placeholder="Select Assignee" />
                   </SelectTrigger>
@@ -154,7 +173,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
             
             <div className="group space-y-2">
               <Label htmlFor="content" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Layout className="w-3.5 h-3.5" /> Content
+                <Layout className="w-3.5 h-3.5" /> {getStdName('std_content', 'Content')}
               </Label>
               <Input 
                 id="content" 
@@ -162,12 +181,13 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                 onChange={(e) => setContent(e.target.value)} 
                 placeholder="E.g. Product promotion video" 
                 className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all"
+                readOnly={isEmployee}
               />
             </div>
             
             <div className="group space-y-2">
               <Label htmlFor="creativeType" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                <Sparkles className="w-3.5 h-3.5" /> Creative or Video
+                <Sparkles className="w-3.5 h-3.5" /> {getStdName('std_creative', 'Creative')}
               </Label>
               <Input 
                 id="creativeType" 
@@ -175,6 +195,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                 onChange={(e) => setCreativeType(e.target.value)} 
                 placeholder="E.g. Video, Image, Carousel" 
                 className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all"
+                readOnly={isEmployee}
               />
             </div>
             
@@ -188,21 +209,14 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                 onChange={(e) => setDescription(e.target.value)} 
                 placeholder="Add more details about this task..."
                 className="min-h-[140px] rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all resize-none py-3"
+                readOnly={isEmployee}
               />
             </div>
             
             {/* Dynamic Custom Fields */}
             {(() => {
-              let parsedColumns = [];
-              if (board?.columns) {
-                if (typeof board.columns === 'string') {
-                  try { parsedColumns = JSON.parse(board.columns) } catch(e) {}
-                } else if (Array.isArray(board.columns)) {
-                  parsedColumns = board.columns;
-                }
-              }
-              
-              if (parsedColumns.length === 0) return null;
+              const customCols = parsedColumns.filter((col: any) => !col.id.startsWith('std_'));
+              if (customCols.length === 0) return null;
               
               return (
                 <div className="mt-4 pt-4 border-t space-y-4">
@@ -210,7 +224,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                     <Sparkles className="w-4 h-4" /> Custom Properties
                   </h4>
                   <div className="grid gap-4">
-                    {parsedColumns.map((col: any) => (
+                    {customCols.map((col: any) => (
                       <div key={col.id} className="group space-y-2">
                         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-primary/50" />
@@ -221,6 +235,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                           onChange={(e) => setCustomFields(prev => ({ ...prev, [col.id]: e.target.value }))}
                           placeholder={`Enter ${col.name.toLowerCase()}...`}
                           className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all"
+                          readOnly={isEmployee}
                         />
                       </div>
                     ))}
@@ -232,31 +247,42 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
           </div>
         </div>
         
-        <div className="px-6 py-5 border-t bg-background/50 backdrop-blur-md flex justify-between items-center shrink-0">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleDelete}
-            className="text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-xl px-3 transition-colors flex items-center gap-2 h-10"
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-          <div className="flex gap-3">
-            <Button variant="ghost" onClick={onClose} className="rounded-xl px-5 h-10">
-              Cancel
-            </Button>
+        {isEmployee ? (
+          <div className="px-6 py-5 border-t bg-background/50 backdrop-blur-md flex justify-end items-center shrink-0">
             <Button 
               onClick={handleSave} 
               className="rounded-xl px-6 h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all flex items-center gap-2 font-medium"
             >
               <Save className="w-4 h-4" />
-              Save Changes
+              Update Status
             </Button>
           </div>
-        </div>
+        ) : (
+          <div className="px-6 py-5 border-t bg-background/50 backdrop-blur-md flex justify-between items-center shrink-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleDelete}
+              className="text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-xl px-3 transition-colors flex items-center gap-2 h-10"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </Button>
+            <div className="flex gap-3">
+              <Button variant="ghost" onClick={onClose} className="rounded-xl px-5 h-10">
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                className="rounded-xl px-6 h-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all flex items-center gap-2 font-medium"
+              >
+                <Save className="w-4 h-4" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   )
 }
-

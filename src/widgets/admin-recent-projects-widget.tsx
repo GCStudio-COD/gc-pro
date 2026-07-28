@@ -20,7 +20,7 @@ export function AdminRecentProjectsWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -30,7 +30,7 @@ export function AdminRecentProjectsWidget() {
             .map(p => ({
               id: p.id,
               name: p.name,
-              status: p.status
+              status: "Active" 
             }));
           setProjects(recent);
         }

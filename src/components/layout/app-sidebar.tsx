@@ -123,14 +123,15 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Spaces Section */}
-        {effectiveRole !== 'employee' && (
-          <SidebarGroup className="mt-4">
-            <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2 group-data-[collapsible=icon]:hidden flex justify-between items-center pr-2">
-              Spaces
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel className="text-xs font-semibold tracking-wider text-muted-foreground uppercase mb-2 group-data-[collapsible=icon]:hidden flex justify-between items-center pr-2">
+            Spaces
+            {effectiveRole !== 'employee' && (
               <Link href={`/${effectiveRole === 'admin' ? 'admin' : 'pm'}/spaces`} className="text-primary hover:underline ml-auto cursor-pointer">
                 Manage
               </Link>
-            </SidebarGroupLabel>
+            )}
+          </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {spaces.map(space => (
@@ -152,10 +153,10 @@ export function AppSidebar() {
                           <SidebarMenuItem key={board.id} className="list-none">
                             <SidebarMenuButton 
                               asChild 
-                              isActive={pathname === `/${effectiveRole === 'admin' ? 'admin' : 'pm'}/spaces/${space.id}/boards/${board.id}`}
+                              isActive={pathname === `/${effectiveRole}/spaces/${space.id}/boards/${board.id}`}
                               className="h-7 text-xs"
                             >
-                              <Link href={`/${effectiveRole === 'admin' ? 'admin' : 'pm'}/spaces/${space.id}/boards/${board.id}`}>
+                              <Link href={`/${effectiveRole}/spaces/${space.id}/boards/${board.id}`}>
                                 <FolderOpen className="h-3 w-3 mr-1" />
                                 <span className="truncate">{board.name}</span>
                               </Link>
@@ -169,7 +170,6 @@ export function AppSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
 
       </SidebarContent>
     </Sidebar>

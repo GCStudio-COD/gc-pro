@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { TaskDetailPanel } from "./task-detail-panel"
+import { usePathname } from "next/navigation"
+import { useAuthStore } from "@/store/use-auth-store"
 
 interface TaskRowProps {
   board?: Board
@@ -31,6 +33,10 @@ export function TaskRow({ board, task, onRefresh, isSubtask = false }: TaskRowPr
   const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [isAddingSubtask, setIsAddingSubtask] = useState(false)
   const [newSubtaskName, setNewSubtaskName] = useState("")
+
+  const pathname = usePathname()
+  const { role } = useAuthStore()
+  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
 
   const handleCustomFieldChange = async (colId: string, value: string) => {
     const customFields = { ...(task.customFields || {}), [colId]: value }
@@ -98,7 +104,7 @@ export function TaskRow({ board, task, onRefresh, isSubtask = false }: TaskRowPr
             {task.name}
           </div>
           
-          {!isSubtask && (
+          {!isSubtask && !isEmployee && (
             <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setIsAddingSubtask(true)}>
               <Subtitles className="h-3 w-3 text-muted-foreground" />
             </Button>
@@ -172,6 +178,7 @@ export function TaskRow({ board, task, onRefresh, isSubtask = false }: TaskRowPr
                 onChange={(e) => handleCustomFieldChange(col.id, e.target.value)} 
                 className="h-7 text-xs border-transparent hover:border-input focus:border-input bg-transparent text-center"
                 placeholder="-"
+                readOnly={isEmployee}
               />
             </div>
           )

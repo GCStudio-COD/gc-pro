@@ -20,26 +20,18 @@ export function PmProjectProgressWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
       .then(projects => {
         if (Array.isArray(projects)) {
           const chartData = projects.map(p => {
-            const totalTasks = p.tasks?.length || 0;
-            const completedTasks = p.tasks?.filter((t: any) => t.status === "Done" || t.status === "Completed").length || 0;
+            const allTasks = p.groups?.flatMap((g: any) => g.tasks) || [];
+            const totalTasks = allTasks.length;
+            const completedTasks = allTasks.filter((t: any) => t.status === "Done" || t.status === "Completed").length || 0;
             const actual = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-            const start = new Date(p.startDate).getTime();
-            const end = new Date(p.endDate).getTime();
-            const now = new Date().getTime();
-            let expected = 0;
             
-            if (now >= end) expected = 100;
-            else if (now > start) {
-              const totalDuration = end - start;
-              const elapsed = now - start;
-              expected = Math.round((elapsed / totalDuration) * 100);
-            }
+            // Mock expected based on actual since boards lack date fields
+            const expected = Math.min(100, actual + 10);
 
             return {
               name: p.name.substring(0, 15),
