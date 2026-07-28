@@ -22,7 +22,7 @@ export function BoardTable({ board, onRefresh, searchQuery, sortOption, filterSt
   const [newGroupName, setNewGroupName] = useState("")
   const pathname = usePathname()
   const { role } = useAuthStore()
-  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
+  const isEmployee = role === 'employee' || Boolean(pathname?.startsWith('/employee'))
 
   const handleAddGroup = async (e: React.FormEvent) => {
     e.preventDefault()

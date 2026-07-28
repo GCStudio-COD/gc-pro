@@ -71,7 +71,7 @@ export function GroupSection({ board, group, onRefresh, searchQuery, sortOption,
   const [newTaskName, setNewTaskName] = useState("")
   const pathname = usePathname()
   const { role } = useAuthStore()
-  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
+  const isEmployee = role === 'employee' || Boolean(pathname?.startsWith('/employee'))
 
   const handleAddColumn = async (type: string, name: string) => {
     let currentCols = [];

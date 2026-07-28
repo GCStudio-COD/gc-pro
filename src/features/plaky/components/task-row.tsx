@@ -36,7 +36,7 @@ export function TaskRow({ board, task, onRefresh, isSubtask = false }: TaskRowPr
 
   const pathname = usePathname()
   const { role } = useAuthStore()
-  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
+  const isEmployee = role === 'employee' || Boolean(pathname?.startsWith('/employee'))
 
   const handleCustomFieldChange = async (colId: string, value: string) => {
     const customFields = { ...(task.customFields || {}), [colId]: value }

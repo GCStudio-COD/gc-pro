@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/app-layout"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderPlus, Settings2, MoreHorizontal } from "lucide-react"
+import { Plus, FolderPlus, Settings2, MoreHorizontal, FolderOpen, ChevronRight } from "lucide-react"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Space, Workspace } from "@/schemas/plaky"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"

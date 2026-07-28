@@ -42,7 +42,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
   
   const pathname = usePathname()
   const { role } = useAuthStore()
-  const isEmployee = role === 'employee' || (pathname && pathname.startsWith('/employee'))
+  const isEmployee = role === 'employee' || Boolean(pathname?.startsWith('/employee'))
 
   let parsedColumns: any[] = [];
   if (board?.columns) {
