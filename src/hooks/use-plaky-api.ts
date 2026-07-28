@@ -3,10 +3,17 @@ import { fetchApi } from '@/lib/api';
 import { toast } from 'sonner';
 import { Workspace, Space, Board, BoardGroup, PlakyTask } from '@/schemas/plaky';
 import { useAuthStore } from '@/store/use-auth-store';
+import { usePathname } from 'next/navigation';
 
 export function usePlakyApi() {
   const [loading, setLoading] = useState(false);
   const { userId, role } = useAuthStore();
+  const pathname = usePathname();
+  
+  let effectiveRole = role;
+  if (pathname?.startsWith('/admin')) effectiveRole = 'admin';
+  else if (pathname?.startsWith('/pm')) effectiveRole = 'project-manager';
+  else if (pathname?.startsWith('/employee')) effectiveRole = 'employee';
 
   const getWorkspaces = useCallback(async (): Promise<Workspace[]> => {
     setLoading(true);
@@ -42,7 +49,7 @@ export function usePlakyApi() {
   const getSpaces = useCallback(async (): Promise<Space[]> => {
     setLoading(true);
     try {
-      const res = await fetchApi(`/plaky/spaces?employeeId=${userId}&role=${role}`);
+      const res = await fetchApi(`/plaky/spaces?employeeId=${userId}&role=${effectiveRole}`);
       if (res.ok) return await res.json();
       throw new Error('Failed to fetch spaces');
     } catch (e: any) {
@@ -51,7 +58,7 @@ export function usePlakyApi() {
     } finally {
       setLoading(false);
     }
-  }, [userId, role]);
+  }, [userId, effectiveRole]);
 
   const createSpace = useCallback(async (data: Partial<Space>): Promise<Space | null> => {
     setLoading(true);
@@ -76,7 +83,7 @@ export function usePlakyApi() {
   const getBoards = useCallback(async (): Promise<Board[]> => {
     setLoading(true);
     try {
-      const res = await fetchApi(`/plaky/boards?employeeId=${userId}&role=${role}`);
+      const res = await fetchApi(`/plaky/boards?employeeId=${userId}&role=${effectiveRole}`);
       if (res.ok) return await res.json();
       throw new Error('Failed to fetch boards');
     } catch (e: any) {
@@ -85,12 +92,12 @@ export function usePlakyApi() {
     } finally {
       setLoading(false);
     }
-  }, [userId, role]);
+  }, [userId, effectiveRole]);
 
   const getBoard = useCallback(async (id: string): Promise<Board | null> => {
     setLoading(true);
     try {
-      const res = await fetchApi(`/plaky/boards/${id}?employeeId=${userId}&role=${role}`);
+      const res = await fetchApi(`/plaky/boards/${id}?employeeId=${userId}&role=${effectiveRole}`);
       if (res.ok) return await res.json();
       throw new Error('Failed to fetch board');
     } catch (e: any) {
@@ -99,7 +106,7 @@ export function usePlakyApi() {
     } finally {
       setLoading(false);
     }
-  }, [userId, role]);
+  }, [userId, effectiveRole]);
 
   const createBoard = useCallback(async (data: Partial<Board>): Promise<Board | null> => {
     setLoading(true);
