@@ -301,6 +301,36 @@ export function GroupSection({ board, group, onRefresh, searchQuery, sortOption,
               ))}
           
           {/* Add Task Row */}
+          {!isEmployee && (
+            <div className="flex px-4 py-2 border-b hover:bg-muted/10 transition-colors items-center group cursor-pointer" onClick={() => !isAddingTask && setIsAddingTask(true)}>
+              {isAddingTask ? (
+                <div className="w-full pl-8 py-1">
+                  <form onSubmit={handleAddTask} className="flex items-center gap-2">
+                    <Input 
+                      autoFocus
+                      className="h-8 max-w-sm"
+                      value={newTaskName} 
+                      onChange={(e) => setNewTaskName(e.target.value)} 
+                      placeholder="New task name" 
+                    />
+                    <Button type="submit" size="sm" className="h-8">Add</Button>
+                    <Button type="button" variant="ghost" size="sm" className="h-8" onClick={(e) => {
+                      e.stopPropagation();
+                      setIsAddingTask(false);
+                    }}>Cancel</Button>
+                  </form>
+                </div>
+              ) : (
+                <div className="w-full flex items-center">
+                  <div className="w-5 ml-2 border-l-[3px] border-transparent h-full absolute left-0" />
+                  <div className="flex items-center text-muted-foreground hover:text-foreground transition-colors py-1 pl-1">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    <span className="text-sm">Add Item</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         </div>
       </div>
