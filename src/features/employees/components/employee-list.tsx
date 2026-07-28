@@ -98,6 +98,20 @@ export function EmployeeList() {
     }
   }
 
+  const handleRoleChange = async (id: string, newRole: string) => {
+    try {
+      const res = await fetchApi(`/employees/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ role: newRole })
+      }, currentUserRole)
+      if (res.ok) {
+        fetchEmployees()
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
   const handleDelete = async (id: string, roleOfTarget: string) => {
     if (currentUserRole !== 'admin' && currentUserRole !== 'SuperAdmin') return;
     if (roleOfTarget === 'SuperAdmin' && currentUserRole !== 'SuperAdmin') {
@@ -221,7 +235,25 @@ export function EmployeeList() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="capitalize">{emp.role}</TableCell>
+                    <TableCell>
+                      {currentUserRole === "admin" || currentUserRole === "SuperAdmin" ? (
+                        <Select 
+                          defaultValue={emp.role} 
+                          onValueChange={(value) => handleRoleChange(emp.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px] h-8 capitalize">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="employee">Employee</SelectItem>
+                            <SelectItem value="project-manager">Project Manager</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="capitalize">{emp.role}</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
