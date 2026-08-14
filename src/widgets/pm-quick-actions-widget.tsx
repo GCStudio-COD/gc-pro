@@ -8,8 +8,7 @@ import Link from "next/link"
 
 export function PmQuickActionsWidget() {
   const actions = [
-    { label: "New Project", icon: Briefcase, variant: "default" as const, href: "/pm/projects/new" },
-    { label: "All Projects", icon: Folder, variant: "outline" as const, href: "/pm/projects" },
+    { label: "Manage Spaces", icon: Briefcase, variant: "default" as const, href: "/pm/spaces" },
     { label: "Leave Requests", icon: Calendar, variant: "outline" as const, href: "/pm/leaves" },
     { label: "View Reports", icon: BarChart2, variant: "outline" as const, href: "/pm/reports" },
     { label: "My Tasks", icon: CheckSquare, variant: "outline" as const, href: "/pm/my-tasks" },

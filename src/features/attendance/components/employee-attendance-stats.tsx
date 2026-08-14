@@ -54,104 +54,117 @@ export function EmployeeAttendanceStats({ selectedDateRange, setSelectedDateRang
   })
 
   useEffect(() => {
-    const effectiveRole = typeof window !== 'undefined' && window.location.pathname.startsWith('/employee') ? 'employee' : 'admin'
+    const fetchData = () => {
+      const effectiveRole = typeof window !== 'undefined' && window.location.pathname.startsWith('/employee') ? 'employee' : 'admin'
+      
+      fetchApi('/attendance', {}, effectiveRole)
+        .then(res => res.json())
+        .then(logs => {
+          if (!Array.isArray(logs)) return;
+          
+          let totalSeconds = 0;
+          let distinctPresences = new Set();
+          
+          let filteredLogs = logs;
+          
+          // Filter by selectedDateRange
+          if (selectedDateRange?.from) {
+            const fromTime = startOfDay(selectedDateRange.from).getTime();
+            const toTime = selectedDateRange.to 
+              ? startOfDay(selectedDateRange.to).getTime() + 86400000 - 1 // end of day
+              : fromTime + 86400000 - 1;
+              
+            filteredLogs = logs.filter(log => {
+              const logTime = new Date(log.date || log.checkInTime).getTime();
+              return logTime >= fromTime && logTime <= toTime;
+            });
+          }
+          
+          let uniqueEmployees = new Set();
+          
+          for (const log of filteredLogs) {
+            if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+            
+            let duration = log.durationSeconds || 0;
+            // Include time for active shifts
+            if (!log.checkOutTime && log.checkInTime) {
+              const now = new Date().getTime();
+              duration += Math.floor((now - new Date(log.checkInTime).getTime()) / 1000);
+            }
+            
+            totalSeconds += duration;
+            distinctPresences.add(log.employeeId + log.date);
+            uniqueEmployees.add(log.employeeId);
+          }
+          
+          setRealDailySeconds(totalSeconds);
+          
+          if (selectedDateRange?.from && (!selectedDateRange.to || selectedDateRange.from.getTime() === selectedDateRange.to.getTime())) {
+            setRealPresent(distinctPresences.size);
+            
+            // Fetch total employees to calc absent
+            fetchApi('/employees', {}, effectiveRole)
+              .then(res => res.json())
+              .then(emps => {
+                if (Array.isArray(emps)) {
+                   if (selectedEmployee !== "all") {
+                      setRealAbsent(distinctPresences.size > 0 ? 0 : 1);
+                   } else {
+                      setRealAbsent(Math.max(0, emps.length - distinctPresences.size));
+                   }
+                }
+              }).catch(console.error);
+          } else {
+            setRealPresent(distinctPresences.size);
+            setRealAbsent(0); // Complex for multi-day, skip for now
+          }
+          
+          // Build chart data
+          const labels: string[] = [];
+          const expected: number[] = [];
+          const actual: number[] = [];
+          
+          const numEmployees = selectedEmployee !== "all" ? 1 : Math.max(1, uniqueEmployees.size);
+          
+          const actualHoursByDate: Record<string, number> = {};
+          
+          for (const log of filteredLogs) {
+             if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
+             const dateKey = new Date(log.date || log.checkInTime).toDateString();
+             let duration = log.durationSeconds || 0;
+             if (!log.checkOutTime && log.checkInTime) {
+               duration += Math.floor((new Date().getTime() - new Date(log.checkInTime).getTime()) / 1000);
+             }
+             if (!actualHoursByDate[dateKey]) actualHoursByDate[dateKey] = 0;
+             actualHoursByDate[dateKey] += duration / 3600;
+          }
+          
+          if (selectedDateRange?.from) {
+            let currentDayTime = startOfDay(selectedDateRange.from).getTime();
+            const toTime = selectedDateRange.to ? startOfDay(selectedDateRange.to).getTime() : currentDayTime;
+            
+            while (currentDayTime <= toTime) {
+              const currentDay = new Date(currentDayTime);
+              const dayStr = currentDay.toDateString();
+              
+              labels.push(format(currentDay, "MMM d"));
+              
+              const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+              expected.push(isWeekend ? 0 : 8 * numEmployees);
+              actual.push(actualHoursByDate[dayStr] || 0);
+              
+              currentDayTime += 86400000;
+            }
+          }
+          
+          setChartData({ labels, expected, actual });
+        })
+        .catch(console.error)
+    }
     
-    fetchApi('/attendance', {}, effectiveRole)
-      .then(res => res.json())
-      .then(logs => {
-        if (!Array.isArray(logs)) return;
-        
-        let totalSeconds = 0;
-        let distinctPresences = new Set();
-        
-        let filteredLogs = logs;
-        
-        // Filter by selectedDateRange
-        if (selectedDateRange?.from) {
-          const fromTime = startOfDay(selectedDateRange.from).getTime();
-          const toTime = selectedDateRange.to 
-            ? startOfDay(selectedDateRange.to).getTime() + 86400000 - 1 // end of day
-            : fromTime + 86400000 - 1;
-            
-          filteredLogs = logs.filter(log => {
-            const logTime = new Date(log.date || log.checkInTime).getTime();
-            return logTime >= fromTime && logTime <= toTime;
-          });
-        }
-        
-        let uniqueEmployees = new Set();
-        
-        for (const log of filteredLogs) {
-          if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
-          
-          let duration = log.durationSeconds || 0;
-          // Include time for active shifts
-          if (!log.checkOutTime && log.checkInTime) {
-            const now = new Date().getTime();
-            const checkIn = new Date(log.checkInTime).getTime();
-            if (now > checkIn) {
-              duration += Math.floor((now - checkIn) / 1000);
-            }
-          }
-          
-          totalSeconds += duration;
-          
-          const dayStr = new Date(log.date || log.checkInTime).toDateString();
-          distinctPresences.add(`${log.employeeId}-${dayStr}`);
-          uniqueEmployees.add(log.employeeId);
-        }
-        
-        setRealDailySeconds(totalSeconds);
-        setRealPresent(distinctPresences.size);
-        setRealAbsent(0); // Absent requires knowing expected work days, keeping it 0 for now
-        
-        // Calculate chart data
-        const numEmployees = selectedEmployee === "all" ? Math.max(1, uniqueEmployees.size) : 1;
-        
-        const labels: string[] = [];
-        const expected: number[] = [];
-        const actual: number[] = [];
-        const actualHoursByDate: Record<string, number> = {};
-        
-        for (const log of filteredLogs) {
-          if (selectedEmployee !== "all" && log.employeeId !== selectedEmployee) continue;
-          let duration = log.durationSeconds || 0;
-          if (!log.checkOutTime && log.checkInTime) {
-            const now = new Date().getTime();
-            const checkIn = new Date(log.checkInTime).getTime();
-            if (now > checkIn) {
-              duration += Math.floor((now - checkIn) / 1000);
-            }
-          }
-          const dayStr = new Date(log.date || log.checkInTime).toDateString();
-          if (!actualHoursByDate[dayStr]) actualHoursByDate[dayStr] = 0;
-          actualHoursByDate[dayStr] += (duration / 3600);
-        }
-        
-        if (selectedDateRange?.from) {
-          const fromTime = startOfDay(selectedDateRange.from).getTime();
-          const toTime = selectedDateRange.to 
-            ? startOfDay(selectedDateRange.to).getTime() + 86400000 - 1
-            : fromTime + 86400000 - 1;
-            
-          let currentDayTime = fromTime;
-          while (currentDayTime <= toTime) {
-            const currentDay = new Date(currentDayTime);
-            const dayStr = currentDay.toDateString();
-            
-            labels.push(format(currentDay, "MMM d"));
-            
-            const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
-            expected.push(isWeekend ? 0 : 8 * numEmployees);
-            actual.push(actualHoursByDate[dayStr] || 0);
-            
-            currentDayTime += 86400000;
-          }
-        }
-        
-        setChartData({ labels, expected, actual });
-      })
-      .catch(console.error)
+    fetchData()
+    window.addEventListener('attendanceUpdated', fetchData)
+    return () => window.removeEventListener('attendanceUpdated', fetchData)
   }, [selectedEmployee, selectedDateRange])
 
   // Update date range when timeframe changes

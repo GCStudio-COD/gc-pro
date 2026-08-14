@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, UserCheck, UserX, Clock } from "lucide-react"
+import { Users, UserCheck, UserX, Clock, Home } from "lucide-react"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
 
 export function AttendanceSummary() {
-  const [stats, setStats] = useState({ total: 0, present: 0, absent: 0, late: 0, rate: 0 })
+  const [stats, setStats] = useState({ total: 0, present: 0, absent: 0, late: 0, rate: 0, wfh: 0 })
   
   const { role } = useRoleStore()
   const pathname = usePathname()
@@ -19,40 +19,46 @@ export function AttendanceSummary() {
   else if (pathname?.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    Promise.all([
-      fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
-      fetchApi('/attendance', {}, effectiveRole).then(res => res.json())
-    ]).then(([employees, attendanceLogs]) => {
-      if (Array.isArray(employees) && Array.isArray(attendanceLogs)) {
-        const total = employees.length;
-        const todayStr = new Date().toDateString();
-        
-        let present = 0;
-        let late = 0;
-        
-        const presentIds = new Set();
-        
-        attendanceLogs.forEach(log => {
-          const logDate = new Date(log.date || log.checkInTime);
-          if (logDate.toDateString() === todayStr && !presentIds.has(log.employeeId)) {
-            presentIds.add(log.employeeId);
-            present++;
-            if (logDate.getHours() >= 9 && logDate.getMinutes() > 0) { // Assuming 9:00 AM is the cutoff for late arrival
-              late++;
+    const fetchData = () => {
+      Promise.all([
+        fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
+        fetchApi('/attendance', {}, effectiveRole).then(res => res.json())
+      ]).then(([employees, attendanceLogs]) => {
+        if (Array.isArray(employees) && Array.isArray(attendanceLogs)) {
+          const total = employees.length;
+          const todayStr = new Date().toDateString();
+          
+          let present = 0;
+          let late = 0;
+          
+          const presentIds = new Set();
+          
+          attendanceLogs.forEach(log => {
+            const logDate = new Date(log.date || log.checkInTime);
+            if (logDate.toDateString() === todayStr && !presentIds.has(log.employeeId)) {
+              presentIds.add(log.employeeId);
+              present++;
+              if (logDate.getHours() >= 9 && logDate.getMinutes() > 0) {
+                late++;
+              }
             }
-          }
-        });
-        
-        const absent = Math.max(0, total - present);
-        const rate = total > 0 ? Math.round((present / total) * 100) : 0;
-        
-        setStats({ total, present, absent, late, rate });
-      }
-    }).catch(console.error)
+          });
+          
+          const absent = Math.max(0, total - present);
+          const rate = total > 0 ? Math.round((present / total) * 100) : 0;
+          
+          setStats({ total, present, absent, late, rate, wfh: 0 });
+        }
+      }).catch(console.error)
+    }
+
+    fetchData()
+    window.addEventListener('attendanceUpdated', fetchData)
+    return () => window.removeEventListener('attendanceUpdated', fetchData)
   }, [effectiveRole])
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
           <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
@@ -94,6 +100,17 @@ export function AttendanceSummary() {
         <CardContent>
           <div className="text-2xl font-bold">{stats.late}</div>
           <p className="text-xs text-muted-foreground">Arrived after 9:00 AM</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+          <CardTitle className="text-sm font-medium">Work from Home</CardTitle>
+          <Home className="w-4 h-4 text-blue-500" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.wfh}</div>
+          <p className="text-xs text-muted-foreground">0 working remotely</p>
         </CardContent>
       </Card>
     </div>

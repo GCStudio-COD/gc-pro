@@ -9,8 +9,8 @@ import Link from "next/link"
 export function EmployeeQuickActionsWidget() {
   const actions = [
     { label: "Request Leave", icon: Plane, url: "/employee/leaves", variant: "default" as const },
-    { label: "View Tasks", icon: CheckSquare, url: "/employee/tasks", variant: "outline" as const },
-    { label: "My Projects", icon: Briefcase, url: "/employee/projects", variant: "outline" as const },
+    { label: "View Tasks", icon: CheckSquare, url: "/employee/my-tasks", variant: "outline" as const },
+    { label: "My Spaces", icon: Briefcase, url: "/employee/spaces", variant: "outline" as const },
     { label: "My Attendance", icon: CalendarDays, url: "/employee/attendance", variant: "outline" as const },
   ]
 

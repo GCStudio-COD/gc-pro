@@ -21,9 +21,8 @@ export function PmUpcomingDeadlinesWidget() {
 
   useEffect(() => {
     Promise.all([
-      fetchApi('/tasks', {}, effectiveRole).then(res => res.json()),
-      fetchApi('/projects', {}, effectiveRole).then(res => res.json())
-    ]).then(([tasks, projects]) => {
+      fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json())
+    ]).then(([tasks]) => {
       let combined: any[] = [];
       const now = new Date();
       now.setHours(0,0,0,0);
@@ -41,7 +40,7 @@ export function PmUpcomingDeadlinesWidget() {
           d.setHours(0,0,0,0);
           const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
           return {
-            event: `Task: ${t.title}`,
+            event: `Task: ${t.name}`,
             dateObj: d,
             type: "Task",
             priorityWeight: getPriorityWeight(t.priority),
@@ -51,21 +50,7 @@ export function PmUpcomingDeadlinesWidget() {
         }))
       }
 
-      if (Array.isArray(projects)) {
-        combined.push(...projects.filter(p => p.status !== 'Completed').map(p => {
-          const d = new Date(p.endDate);
-          d.setHours(0,0,0,0);
-          const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
-          return {
-            event: `Project: ${p.name}`,
-            dateObj: d,
-            type: "Project",
-            priorityWeight: getPriorityWeight(p.priority),
-            isUrgent: daysUntil <= 2,
-            status: p.priority === 'Critical' || p.priority === 'High' ? 'Critical' : 'Routine'
-          };
-        }))
-      }
+
 
       combined = combined
         .filter(d => d.dateObj >= now)

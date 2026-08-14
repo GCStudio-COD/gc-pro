@@ -28,8 +28,8 @@ export function AdminCompanyStatsWidget() {
 
   useEffect(() => {
     Promise.all([
-      fetchApi('/projects', {}, effectiveRole).then(res => res.json()),
-      fetchApi('/tasks', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/plaky/boards', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json()),
       fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
       fetchApi('/attendance', {}, effectiveRole).then(res => res.json()),
       fetchApi('/time-logs', {}, effectiveRole).then(res => res.json())

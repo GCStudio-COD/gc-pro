@@ -21,9 +21,9 @@ export function AdminRecentActivityWidget() {
 
   useEffect(() => {
     Promise.all([
-      fetchApi('/projects', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/plaky/boards', {}, effectiveRole).then(res => res.json()),
       fetchApi('/employees', {}, effectiveRole).then(res => res.json())
-    ]).then(([projects, employees]) => {
+    ]).then(([boards, employees]) => {
       let combined = [];
       const now = new Date();
 
@@ -36,14 +36,14 @@ export function AdminRecentActivityWidget() {
         return `${Math.floor(diffHrs / 24)} days ago`;
       };
 
-      if (Array.isArray(projects)) {
-        combined.push(...projects.map(p => ({
-          action: p.status === 'Completed' ? 'Project Completed' : 'Project Updated',
-          subject: p.name,
-          dateObj: new Date(p.updatedAt),
-          time: formatTimeDiff(p.updatedAt),
+      if (Array.isArray(boards)) {
+        combined.push(...boards.map(b => ({
+          action: 'Board Updated',
+          subject: b.name,
+          dateObj: new Date(b.updatedAt),
+          time: formatTimeDiff(b.updatedAt),
           icon: Briefcase,
-          color: p.status === 'Completed' ? 'text-emerald-500' : 'text-blue-500'
+          color: 'text-blue-500'
         })))
       }
 

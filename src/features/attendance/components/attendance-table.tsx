@@ -42,59 +42,65 @@ export function AttendanceTable({ date, selectedEmployee }: AttendanceTableProps
   const effectiveRole = pathname?.startsWith('/employee') ? 'employee' : role
 
   useEffect(() => {
-    fetchApi('/attendance', {}, effectiveRole)
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          let filtered = data;
-          
-          if (date?.from) {
-            const fromTime = date.from.getTime();
-            const startOfFrom = new Date(fromTime);
-            startOfFrom.setHours(0, 0, 0, 0);
+    const fetchData = () => {
+      fetchApi('/attendance', {}, effectiveRole)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            let filtered = data;
             
-            const toTime = date.to ? date.to.getTime() : fromTime;
-            const endOfTo = new Date(toTime);
-            endOfTo.setHours(23, 59, 59, 999);
-            
-            filtered = filtered.filter(log => {
-              const logTime = new Date(log.date || log.checkInTime).getTime();
-              return logTime >= startOfFrom.getTime() && logTime <= endOfTo.getTime();
-            });
-          } else {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            filtered = filtered.filter(log => {
-              const logTime = new Date(log.date || log.checkInTime).getTime();
-              return logTime >= today.getTime() && logTime < tomorrow.getTime();
-            });
-          }
-          
-          if (selectedEmployee && selectedEmployee !== "all") {
-            filtered = filtered.filter(log => log.employeeId === selectedEmployee);
-          }
-
-          const mapped = filtered.map(log => {
-            const formatTime = (d: string | null) => d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"
-            
-            return {
-              id: log.id,
-              empId: log.employee?.id?.substring(0, 8),
-              name: `${log.employee?.firstName} ${log.employee?.lastName}`,
-              avatar: log.employee?.profileImage || "/avatars/01.png",
-              department: log.employee?.department?.name || "Unknown",
-              status: log.checkOutTime ? "Completed" : "Present",
-              clockIn: formatTime(log.checkInTime),
-              clockOut: formatTime(log.checkOutTime)
+            if (date?.from) {
+              const fromTime = date.from.getTime();
+              const startOfFrom = new Date(fromTime);
+              startOfFrom.setHours(0, 0, 0, 0);
+              
+              const toTime = date.to ? date.to.getTime() : fromTime;
+              const endOfTo = new Date(toTime);
+              endOfTo.setHours(23, 59, 59, 999);
+              
+              filtered = filtered.filter(log => {
+                const logTime = new Date(log.date || log.checkInTime).getTime();
+                return logTime >= startOfFrom.getTime() && logTime <= endOfTo.getTime();
+              });
+            } else {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              
+              filtered = filtered.filter(log => {
+                const logTime = new Date(log.date || log.checkInTime).getTime();
+                return logTime >= today.getTime() && logTime < tomorrow.getTime();
+              });
             }
-          })
-          setAttendance(mapped)
-        }
-      })
-      .catch(console.error)
+            
+            if (selectedEmployee && selectedEmployee !== "all") {
+              filtered = filtered.filter(log => log.employeeId === selectedEmployee);
+            }
+
+            const mapped = filtered.map(log => {
+              const formatTime = (d: string | null) => d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--"
+              
+              return {
+                id: log.id,
+                empId: log.employee?.id?.substring(0, 8),
+                name: `${log.employee?.firstName} ${log.employee?.lastName}`,
+                avatar: log.employee?.profileImage || "/avatars/01.png",
+                department: log.employee?.department?.name || "Unknown",
+                status: log.checkOutTime ? "Completed" : "Present",
+                clockIn: formatTime(log.checkInTime),
+                clockOut: formatTime(log.checkOutTime)
+              }
+            })
+            setAttendance(mapped)
+          }
+        })
+        .catch(console.error)
+    }
+
+    fetchData()
+    window.addEventListener('attendanceUpdated', fetchData)
+    return () => window.removeEventListener('attendanceUpdated', fetchData)
   }, [effectiveRole, date, selectedEmployee])
 
   const filteredAttendance = attendance.filter((record) => {

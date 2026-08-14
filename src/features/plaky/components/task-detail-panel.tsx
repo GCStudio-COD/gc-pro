@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { Trash2, Type, Layout, AlignLeft, CheckCircle2, UserCircle2, Save, Sparkles } from "lucide-react"
+import { Trash2, Type, Layout, AlignLeft, CheckCircle2, UserCircle2, Save, Sparkles, Calendar, Flag } from "lucide-react"
 
 interface TaskDetailPanelProps {
   task: PlakyTask
@@ -28,6 +28,13 @@ const statusColors: Record<string, string> = {
   "Done": "bg-green-500",
 }
 
+const priorityColors: Record<string, string> = {
+  "Low": "text-slate-500",
+  "Medium": "text-blue-500",
+  "High": "text-orange-500",
+  "Urgent": "text-red-500",
+}
+
 export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: TaskDetailPanelProps) {
   const { updateTask, deleteTask } = usePlakyApi()
   
@@ -36,6 +43,8 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
   const [creativeType, setCreativeType] = useState(task.creativeType || "")
   const [description, setDescription] = useState(task.description || "")
   const [status, setStatus] = useState(task.status)
+  const [priority, setPriority] = useState(task.priority || "Medium")
+  const [dueDate, setDueDate] = useState(task.dueDate ? new Date(task.dueDate).toISOString().substring(0, 10) : "")
   const [assigneeId, setAssigneeId] = useState(task.assigneeId || "unassigned")
   const [customFields, setCustomFields] = useState<Record<string, any>>(task.customFields || {})
   const [employees, setEmployees] = useState<any[]>([])
@@ -74,6 +83,8 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
     setCreativeType(task.creativeType || "")
     setDescription(task.description || "")
     setStatus(task.status)
+    setPriority(task.priority || "Medium")
+    setDueDate(task.dueDate ? new Date(task.dueDate).toISOString().substring(0, 10) : "")
     setAssigneeId(task.assigneeId || "unassigned")
     setCustomFields(task.customFields || {})
   }, [task])
@@ -85,6 +96,8 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
       creativeType,
       description,
       status,
+      priority,
+      dueDate: dueDate || null,
       assigneeId: assigneeId === "unassigned" ? null : assigneeId,
       customFields
     })
@@ -168,6 +181,42 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="group space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Flag className="w-3.5 h-3.5" /> Priority
+                </Label>
+                <Select value={priority} onValueChange={setPriority} disabled={isEmployee}>
+                  <SelectTrigger className={`h-11 rounded-xl border-transparent focus:ring-1 focus:ring-primary/50 transition-all font-medium bg-muted/40`}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl border-muted/20 shadow-xl">
+                    {Object.entries(priorityColors).map(([p, colorClass]) => (
+                      <SelectItem key={p} value={p} className="rounded-lg cursor-pointer">
+                        <div className={`flex items-center gap-2 font-medium ${colorClass}`}>
+                          {p}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="group space-y-2">
+                <Label htmlFor="dueDate" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5" /> Due Date
+                </Label>
+                <Input 
+                  id="dueDate"
+                  type="date"
+                  value={dueDate} 
+                  onChange={(e) => setDueDate(e.target.value)} 
+                  className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all font-medium"
+                  readOnly={isEmployee}
+                />
               </div>
             </div>
             

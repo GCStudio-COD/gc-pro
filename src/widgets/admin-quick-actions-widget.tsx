@@ -10,8 +10,7 @@ export function AdminQuickActionsWidget() {
   const actions = [
     { label: "Add Employee", icon: UserPlus, variant: "default" as const, url: "/admin/employees" },
     { label: "Schedule Meeting", icon: Calendar, variant: "default" as const, url: "/admin/meetings/new" },
-    { label: "New Project", icon: Briefcase, variant: "outline" as const, url: "/admin/projects" },
-    { label: "Create Task", icon: CheckSquare, variant: "outline" as const, url: "/admin/tasks/new" },
+    { label: "Manage Spaces", icon: Briefcase, variant: "outline" as const, url: "/admin/spaces" },
     { label: "Departments", icon: Building, variant: "outline" as const, url: "/admin/departments" },
     { label: "View Reports", icon: BarChart, variant: "outline" as const, url: "/admin/reports" },
   ]

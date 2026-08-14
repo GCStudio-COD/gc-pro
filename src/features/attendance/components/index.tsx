@@ -22,7 +22,7 @@ export function AttendanceFeature() {
   })
   const [selectedEmployee, setSelectedEmployee] = useState("all")
   const [employees, setEmployees] = useState<any[]>([])
-  
+
   const effectiveRole = pathname?.startsWith('/employee') ? 'employee' : role
 
   useEffect(() => {
@@ -39,14 +39,14 @@ export function AttendanceFeature() {
   }, [effectiveRole])
 
   return (
-    <div className="flex flex-col p-4 md:p-8 w-full max-w-[1600px] mx-auto">
+    <div className="flex flex-col w-full mx-auto">
       <div className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
         <p className="text-muted-foreground mt-1">Monitor daily staff attendance and history.</p>
       </div>
 
       {effectiveRole !== 'employee' && <AttendanceSummary />}
-      
+
       <div className="flex flex-col xl:flex-row gap-6 items-start h-full">
         <div className="w-full xl:w-auto flex-shrink-0 sticky top-4">
           <AttendanceCalendar date={date} setDate={setDate} />
@@ -75,7 +75,7 @@ export function AttendanceFeature() {
                   </SelectContent>
                 </Select>
               </div>
-              
+
               <EmployeeAttendanceStats selectedDateRange={date} setSelectedDateRange={setDate} selectedEmployee={selectedEmployee} />
               <AttendanceTable date={date} selectedEmployee={selectedEmployee} />
             </div>

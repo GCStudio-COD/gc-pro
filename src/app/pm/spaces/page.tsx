@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/app-layout"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderPlus, Settings2, MoreHorizontal } from "lucide-react"
+import { Plus, FolderPlus, Settings2, MoreHorizontal, Trash2 } from "lucide-react"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Space, Workspace } from "@/schemas/plaky"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -14,7 +14,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 export default function SpacesPage() {
-  const { getSpaces, createSpace, getWorkspaces, createWorkspace, createBoard } = usePlakyApi()
+  const { getSpaces, createSpace, getWorkspaces, createWorkspace, createBoard, deleteBoard, deleteSpace } = usePlakyApi()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   
@@ -127,32 +127,58 @@ export default function SpacesPage() {
                   </div>
                   <div>
                     <CardTitle className="text-xl">{space.name}</CardTitle>
-                    <CardDescription>{space.boards?.length || 0} boards</CardDescription>
+                    <CardDescription>{space.boards?.length || 0} clients</CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => {
-                  setSelectedSpaceId(space.id)
-                  setIsBoardDialogOpen(true)
-                }}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add Board
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setSelectedSpaceId(space.id)
+                    setIsBoardDialogOpen(true)
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Client
+                  </Button>
+                  <Button variant="outline" size="icon" className="text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors" onClick={async () => {
+                    if (confirm('Are you sure you want to delete this space? All boards and tasks inside it will be permanently lost.')) {
+                      const success = await deleteSpace(space.id);
+                      if (success) loadData();
+                    }
+                  }}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {space.boards && space.boards.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                     {space.boards.map((board: any) => (
-                      <Link key={board.id} href={`/pm/spaces/${space.id}/boards/${board.id}`}>
-                        <div className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group">
-                          <h3 className="font-medium group-hover:text-primary transition-colors">{board.name}</h3>
-                          <p className="text-xs text-muted-foreground mt-1">Click to open board</p>
-                        </div>
-                      </Link>
+                      <div key={board.id} className="relative group/board">
+                        <Link href={`/pm/spaces/${space.id}/boards/${board.id}`}>
+                          <div className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group-hover/board:border-primary">
+                            <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                            <p className="text-xs text-muted-foreground mt-1">Click to open client</p>
+                          </div>
+                        </Link>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute top-3 right-3 opacity-0 group-hover/board:opacity-100 transition-opacity h-7 w-7"
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            if (confirm('Are you sure you want to delete this client?')) {
+                              const success = await deleteBoard(board.id);
+                              if (success) loadData();
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground mt-4 py-8 text-center border rounded-lg border-dashed">
-                    No boards in this space yet. Create one to get started.
+                    No clients in this space yet. Create one to get started.
                   </div>
                 )}
               </CardContent>
@@ -174,15 +200,15 @@ export default function SpacesPage() {
         <Dialog open={isBoardDialogOpen} onOpenChange={setIsBoardDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Create a new Board</DialogTitle>
+              <DialogTitle>Create a new Client</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label htmlFor="boardName">Board Name</Label>
+                <Label htmlFor="boardName">Client Name</Label>
                 <Input id="boardName" value={newBoardName} onChange={(e) => setNewBoardName(e.target.value)} placeholder="e.g. Client X" />
               </div>
             </div>
-            <Button onClick={handleCreateBoard} disabled={!newBoardName}>Create Board</Button>
+            <Button onClick={handleCreateBoard} disabled={!newBoardName}>Create Client</Button>
           </DialogContent>
         </Dialog>
       </div>

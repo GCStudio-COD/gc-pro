@@ -53,6 +53,7 @@ export const plakyTaskSchema = z.object({
   creativeType: z.string().nullable().optional(),
   paymentStatus: z.string().default("Pending"),
   status: z.string().default("To Do"),
+  priority: z.string().optional(),
   description: z.string().nullable().optional(),
   order: z.number().default(0),
   createdAt: z.string(),

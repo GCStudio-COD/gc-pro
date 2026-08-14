@@ -1,6 +1,7 @@
 "use client"
 
 import { ThemeToggle } from "./theme-toggle"
+import { CheckInWidget } from "@/widgets/check-in-widget"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,6 +84,7 @@ export function AppHeader() {
       </div>
 
       <div className="flex items-center gap-2">
+        <CheckInWidget />
         <ThemeToggle />
         
         <DropdownMenu onOpenChange={handleOpenChange}>

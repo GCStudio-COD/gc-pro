@@ -80,6 +80,21 @@ export function usePlakyApi() {
     }
   }, []);
 
+  const deleteSpace = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetchApi(`/plaky/spaces/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Space deleted');
+        return true;
+      }
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to delete space');
+    } catch (e: any) {
+      toast.error(e.message);
+      return false;
+    }
+  }, []);
+
   const getBoards = useCallback(async (): Promise<Board[]> => {
     setLoading(true);
     try {
@@ -206,6 +221,20 @@ export function usePlakyApi() {
       return false;
     }
   }, []);
+  const deleteBoard = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetchApi(`/plaky/boards/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Board deleted');
+        return true;
+      }
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to delete board');
+    } catch (e: any) {
+      toast.error(e.message);
+      return false;
+    }
+  }, []);
 
   return {
     loading,
@@ -213,10 +242,12 @@ export function usePlakyApi() {
     createWorkspace,
     getSpaces,
     createSpace,
+    deleteSpace,
     getBoards,
     getBoard,
     createBoard,
     updateBoard,
+    deleteBoard,
     createGroup,
     createTask,
     updateTask,

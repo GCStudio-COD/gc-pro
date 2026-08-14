@@ -33,16 +33,16 @@ export function PmWelcomeWidget() {
       }).catch(console.error)
       
     // Fetch projects count
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
-      .then(projects => {
-        if (Array.isArray(projects)) {
-          setProjectCount(projects.filter(p => p.status === 'In Progress' || p.status === 'Planning').length)
+      .then(boards => {
+        if (Array.isArray(boards)) {
+          setProjectCount(boards.length)
         }
       }).catch(console.error)
       
     // Fetch pending tasks count
-    fetchApi('/tasks', {}, effectiveRole)
+    fetchApi('/plaky/tasks', {}, effectiveRole)
       .then(res => res.json())
       .then(tasks => {
         if (Array.isArray(tasks)) {
