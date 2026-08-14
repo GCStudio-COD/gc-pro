@@ -14,13 +14,13 @@ import { PmRecentActivitiesWidget } from "@/widgets/pm-recent-activities-widget"
 export default function ProjectManagerDashboardPage() {
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
-        
+      <div className="flex flex-col gap-6 w-full mx-auto">
+
         <div className="flex flex-col gap-6">
           <PmWelcomeWidget />
           <PmMyProjectsWidget />
         </div>
-        
+
         {/* Middle: Data & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <PmProjectProgressWidget />
@@ -34,11 +34,11 @@ export default function ProjectManagerDashboardPage() {
           <PmAssignedTeamsWidget />
           <PmTodaysMeetingsWidget />
           <PmUpcomingDeadlinesWidget />
-          
+
           <PmRecentActivitiesWidget />
           <PmNotificationsWidget />
         </div>
-        
+
       </div>
     </AppLayout>
   )

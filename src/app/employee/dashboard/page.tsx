@@ -13,13 +13,13 @@ import { EmployeeRecentActivityWidget } from "@/widgets/employee-recent-activity
 export default function EmployeeDashboardPage() {
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
-        
+      <div className="flex flex-col gap-6 w-full mx-auto">
+
         {/* Top: Welcome */}
         <div className="flex flex-col gap-6">
           <EmployeeWelcomeWidget />
         </div>
-        
+
         {/* Middle: Data & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           <EmployeeWorkingHoursWidget />
@@ -35,13 +35,13 @@ export default function EmployeeDashboardPage() {
             <EmployeeAssignedProjectsWidget />
             <EmployeeUpcomingDeadlinesWidget />
           </div>
-          
+
           <div className="grid grid-cols-1 gap-6">
             <EmployeeNotificationsWidget />
             <EmployeeRecentActivityWidget />
           </div>
         </div>
-        
+
       </div>
     </AppLayout>
   )

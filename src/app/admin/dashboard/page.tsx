@@ -17,22 +17,22 @@ import { AdminRecentActivityWidget } from "@/widgets/admin-recent-activity-widge
 export default function AdminDashboardPage() {
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
-        
+      <div className="flex flex-col gap-6 w-full mx-auto">
+
         {/* Top: Welcome & High-level stats */}
         <div className="grid grid-cols-1 gap-6">
           <AdminWelcomeWidget />
           <AdminCompanyStatsWidget />
         </div>
-        
+
         {/* Middle: Data & Analytics */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <AdminEmployeeStatsWidget />
           <AdminProjectOverviewWidget />
-          
+
           <AdminTaskOverviewWidget />
           <AdminQuickActionsWidget />
-          
+
           <AdminAttendanceSummaryWidget />
           <AdminProductivityOverviewWidget />
         </div>
@@ -41,14 +41,14 @@ export default function AdminDashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <AdminDepartmentsWidget />
           <AdminRecentActivityWidget />
-          
+
           <AdminRecentEmployeesWidget />
           <AdminUpcomingDeadlinesWidget />
-          
+
           <AdminRecentProjectsWidget />
           <AdminNotificationsWidget />
         </div>
-        
+
       </div>
     </AppLayout>
   )

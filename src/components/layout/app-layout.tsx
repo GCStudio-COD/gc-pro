@@ -29,11 +29,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-screen overflow-hidden">
       <AppSidebar />
-      <div className="flex flex-col flex-1 min-w-0 h-screen">
+      <div className="flex flex-col flex-1 min-w-0 min-h-0 h-screen">
         <AppHeader />
-        <main className="flex flex-col flex-1 p-4 sm:p-0 xl:p-8 bg-muted/40 min-w-0 overflow-y-auto">
+        <main className="flex flex-col flex-1 p-4 sm:p-0 xl:p-8 bg-muted/40 min-w-0 min-h-0 overflow-y-auto">
           {children}
         </main>
       </div>

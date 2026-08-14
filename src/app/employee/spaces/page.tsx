@@ -17,6 +17,7 @@ export default function SpacesPage() {
   const { getSpaces, createSpace, getWorkspaces, createWorkspace, createBoard } = usePlakyApi()
   const [spaces, setSpaces] = useState<Space[]>([])
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   
   const [newSpaceName, setNewSpaceName] = useState("")
   const [newSpaceColor, setNewSpaceColor] = useState("#4f46e5")
@@ -31,6 +32,7 @@ export default function SpacesPage() {
   }, [])
 
   const loadData = async () => {
+    setIsLoading(true)
     const ws = await getWorkspaces()
     let currentWs = ws[0]
     if (!currentWs) {
@@ -40,6 +42,7 @@ export default function SpacesPage() {
     
     const sp = await getSpaces()
     setSpaces(sp)
+    setIsLoading(false)
   }
 
   const handleCreateSpace = async () => {
@@ -84,50 +87,57 @@ export default function SpacesPage() {
         </div>
 
         <div className="grid gap-6">
-          {spaces.map(space => (
-            <Card key={space.id}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded flex items-center justify-center text-white font-bold" style={{ backgroundColor: space.color || '#4f46e5' }}>
-                    {space.name.substring(0,2).toUpperCase()}
-                  </div>
-                  <div>
-                    <CardTitle className="text-xl">{space.name}</CardTitle>
-                    <CardDescription>{space.boards?.length || 0} boards</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {space.boards && space.boards.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                    {space.boards.map((board: any) => (
-                      <Link key={board.id} href={`/employee/spaces/${space.id}/boards/${board.id}`} className="flex items-center gap-3 border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group/board">
-                        <div className="w-8 h-8 rounded bg-muted flex items-center justify-center shrink-0">
-                          <FolderOpen className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <span className="font-medium text-sm flex-1">{board.name}</span>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover/board:opacity-100 transition-opacity" />
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground mt-4 py-8 text-center border rounded-lg border-dashed">
-                    No boards in this space yet.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-          
-          {spaces.length === 0 && (
-            <div className="text-center py-12 border rounded-lg border-dashed">
-              <FolderPlus className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
-              <h3 className="text-lg font-medium">No spaces found</h3>
-              <p className="text-muted-foreground mb-4">Create your first space to start organizing your work.</p>
-              <Button onClick={() => setIsSpaceDialogOpen(true)}>
-                Create Space
-              </Button>
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 border rounded-lg border-dashed">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="text-muted-foreground animate-pulse">Loading workspaces...</p>
             </div>
+          ) : (
+            <>
+              {spaces.map((space: any) => (
+                <Card key={space.id} className="w-full">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded text-white flex items-center justify-center font-bold text-lg" style={{ backgroundColor: space.color || '#4f46e5' }}>
+                        {space.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl">{space.name}</CardTitle>
+                        <CardDescription>{space.boards?.length || 0} clients</CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {space.boards && space.boards.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        {space.boards.map((board: any) => (
+                          <div key={board.id} className="relative group/board">
+                            <Link href={`/employee/spaces/${space.id}/boards/${board.id}`}>
+                              <div className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group-hover/board:border-primary">
+                                <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                                <p className="text-xs text-muted-foreground mt-1">Click to open client</p>
+                              </div>
+                            </Link>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground mt-4 py-8 text-center border rounded-lg border-dashed">
+                        No clients in this space yet.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {spaces.length === 0 && (
+                <div className="text-center py-12 border rounded-lg border-dashed">
+                  <FolderPlus className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
+                  <h3 className="text-lg font-medium">No spaces found</h3>
+                  <p className="text-muted-foreground mb-4">Ask an administrator to create a space.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
