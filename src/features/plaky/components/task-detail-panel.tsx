@@ -25,7 +25,7 @@ const statusColors: Record<string, string> = {
   "In Progress": "bg-orange-500",
   "Review": "bg-purple-500",
   "Approved": "bg-blue-500",
-  "Done": "bg-green-500",
+  "Complete": "bg-green-500",
 }
 
 const priorityColors: Record<string, string> = {

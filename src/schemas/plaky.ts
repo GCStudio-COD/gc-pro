@@ -26,6 +26,7 @@ export const boardSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().nullable().optional(),
   isFavorite: z.boolean().default(false),
+  status: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
   columns: z.any().optional(),

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/app-layout"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderPlus, Settings2, MoreHorizontal, Trash2 } from "lucide-react"
+import { Plus, FolderPlus, Settings2, MoreHorizontal, Trash2, CheckCircle2 } from "lucide-react"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Space, Workspace } from "@/schemas/plaky"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -163,9 +163,14 @@ export default function SpacesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         {space.boards.map((board: any) => (
                           <div key={board.id} className="relative group/board">
-                            <Link href={`/pm/spaces/${space.id}/boards/${board.id}`}>
+                            <Link href={`/pm/spaces/${space.slug || space.id}/boards/${board.slug || board.id}`}>
                               <div className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group-hover/board:border-primary">
-                                <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                                <div className="flex items-start justify-between">
+                                  <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                                  {board.status === 'Completed' && (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground mt-1">Click to open client</p>
                               </div>
                             </Link>

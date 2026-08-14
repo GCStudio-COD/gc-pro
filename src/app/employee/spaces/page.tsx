@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { AppLayout } from "@/components/layout/app-layout"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderPlus, Settings2, MoreHorizontal, FolderOpen, ChevronRight } from "lucide-react"
+import { Plus, FolderPlus, Settings2, MoreHorizontal, FolderOpen, ChevronRight, CheckCircle2 } from "lucide-react"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Space, Workspace } from "@/schemas/plaky"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
@@ -18,7 +18,7 @@ export default function SpacesPage() {
   const [spaces, setSpaces] = useState<Space[]>([])
   const [workspace, setWorkspace] = useState<Workspace | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  
+
   const [newSpaceName, setNewSpaceName] = useState("")
   const [newSpaceColor, setNewSpaceColor] = useState("#4f46e5")
   const [isSpaceDialogOpen, setIsSpaceDialogOpen] = useState(false)
@@ -39,7 +39,7 @@ export default function SpacesPage() {
       currentWs = await createWorkspace("Goal Creatives") as Workspace
     }
     setWorkspace(currentWs)
-    
+
     const sp = await getSpaces()
     setSpaces(sp)
     setIsLoading(false)
@@ -78,7 +78,7 @@ export default function SpacesPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-6 p-4 md:p-8 w-full mx-auto">
+      <div className="flex flex-col gap-6 w-full mx-auto">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Spaces & Boards</h1>
@@ -112,9 +112,14 @@ export default function SpacesPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         {space.boards.map((board: any) => (
                           <div key={board.id} className="relative group/board">
-                            <Link href={`/employee/spaces/${space.id}/boards/${board.id}`}>
+                            <Link href={`/employee/spaces/${space.slug || space.id}/boards/${board.slug || board.id}`}>
                               <div className="border rounded-lg p-4 hover:border-primary cursor-pointer transition-colors group-hover/board:border-primary">
-                                <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                                <div className="flex items-start justify-between">
+                                  <h3 className="font-medium group-hover/board:text-primary transition-colors pr-8">{board.name}</h3>
+                                  {board.status === 'Completed' && (
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground mt-1">Click to open client</p>
                               </div>
                             </Link>
@@ -129,7 +134,7 @@ export default function SpacesPage() {
                   </CardContent>
                 </Card>
               ))}
-              
+
               {spaces.length === 0 && (
                 <div className="text-center py-12 border rounded-lg border-dashed">
                   <FolderPlus className="mx-auto h-12 w-12 text-muted-foreground opacity-50 mb-4" />
