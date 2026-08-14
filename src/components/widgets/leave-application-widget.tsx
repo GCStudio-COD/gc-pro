@@ -118,6 +118,7 @@ export function LeaveApplicationWidget() {
                   <SelectItem value="Paid">Paid Time Off (Weekly)</SelectItem>
                   <SelectItem value="Emergency">Emergency Leave (Weekly)</SelectItem>
                   <SelectItem value="Sick">Sick Leave (Yearly)</SelectItem>
+                  <SelectItem value="Work From Home">Work From Home (Unlimited)</SelectItem>
                 </SelectContent>
               </Select>
             </div>

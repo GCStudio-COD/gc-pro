@@ -22,14 +22,20 @@ export function AttendanceSummary() {
     const fetchData = () => {
       Promise.all([
         fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
-        fetchApi('/attendance', {}, effectiveRole).then(res => res.json())
-      ]).then(([employees, attendanceLogs]) => {
+        fetchApi('/attendance', {}, effectiveRole).then(res => res.json()),
+        fetchApi('/leaves', {}, effectiveRole).then(res => res.json())
+      ]).then(([employees, attendanceLogs, leaves]) => {
         if (Array.isArray(employees) && Array.isArray(attendanceLogs)) {
           const total = employees.length;
           const todayStr = new Date().toDateString();
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          const todayEnd = new Date();
+          todayEnd.setHours(23, 59, 59, 999);
           
           let present = 0;
           let late = 0;
+          let wfh = 0;
           
           const presentIds = new Set();
           
@@ -43,11 +49,25 @@ export function AttendanceSummary() {
               }
             }
           });
+
+          if (Array.isArray(leaves)) {
+            const wfhIds = new Set();
+            leaves.forEach(leave => {
+              if (leave.type === 'Work From Home' && leave.status === 'Approved') {
+                const start = new Date(leave.startDate);
+                const end = new Date(leave.endDate);
+                if (todayStart >= start && todayStart <= end && !wfhIds.has(leave.employeeId)) {
+                  wfhIds.add(leave.employeeId);
+                  wfh++;
+                }
+              }
+            });
+          }
           
           const absent = Math.max(0, total - present);
           const rate = total > 0 ? Math.round((present / total) * 100) : 0;
           
-          setStats({ total, present, absent, late, rate, wfh: 0 });
+          setStats({ total, present, absent, late, rate, wfh });
         }
       }).catch(console.error)
     }
