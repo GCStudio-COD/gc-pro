@@ -22,7 +22,7 @@ export function EmployeeTaskProgressWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/tasks', {}, effectiveRole)
+    fetchApi('/plaky/tasks', {}, effectiveRole)
       .then(res => res.json())
       .then(tasks => {
         if (Array.isArray(tasks)) {

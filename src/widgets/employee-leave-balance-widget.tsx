@@ -23,9 +23,7 @@ export function EmployeeLeaveBalanceWidget() {
   }, [userId, role])
 
   const leaves = balances ? [
-    { type: "Paid Time Off (Weekly)", used: balances.paid.used, total: balances.paid.total, color: "bg-primary" },
-    { type: "Emergency Leave (Weekly)", used: balances.emergency.used, total: balances.emergency.total, color: "bg-orange-500" },
-    { type: "Sick Leave (Yearly)", used: balances.sick.used, total: balances.sick.total, color: "bg-destructive" },
+    { type: "Paid Time Off (Monthly 1)", used: balances.paid.used, total: balances.paid.total, color: "bg-primary" }
   ] : []
 
   if (!balances) return null;

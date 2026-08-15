@@ -1,15 +1,34 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
 
+interface EmployeeStat {
+  id: string;
+  name: string;
+  totalTasks: number;
+  completedTasks: number;
+  onTime: number;
+  overdue: number;
+  attendanceDays: number;
+  activeProjects: number;
+  score: number;
+}
+
 export function ProductivityChart() {
-  const [data, setData] = useState<{week: string, productivity: number, target: number}[]>([])
+  const [data, setData] = useState<EmployeeStat[]>([])
   
   const { role } = useRoleStore()
   const pathname = usePathname()
@@ -21,104 +40,146 @@ export function ProductivityChart() {
 
   useEffect(() => {
     Promise.all([
-      fetchApi('/time-logs', {}, effectiveRole).then(res => res.json()),
-      fetchApi('/employees', {}, effectiveRole).then(res => res.json())
-    ]).then(([timeLogs, employees]) => {
-      if (Array.isArray(timeLogs) && Array.isArray(employees)) {
-        const totalEmps = employees.length || 1;
-        const now = new Date();
-        const weeksData = [];
-
-        // Last 5 weeks
-        for (let i = 4; i >= 0; i--) {
-          const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (i * 7 + now.getDay()));
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(startOfWeek.getDate() + 6);
-          endOfWeek.setHours(23, 59, 59, 999);
+      fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/attendance', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/plaky/boards', {}, effectiveRole).then(res => res.json())
+    ]).then(([tasks, attendance, employees, boards]) => {
+      if (Array.isArray(tasks) && Array.isArray(attendance) && Array.isArray(employees)) {
+        
+        const stats: EmployeeStat[] = employees.map(emp => {
+          const empTasks = tasks.filter(t => t.assigneeId === emp.id || t.assignees?.includes(emp.id));
+          const totalTasks = empTasks.length;
           
-          weeksData.push({
-            week: i === 0 ? "This Wk" : `W-${i}`,
-            start: startOfWeek,
-            end: endOfWeek,
-            productivity: 0,
-            target: 80 // Target 80% productivity
-          });
-        }
-
-        const expectedSecondsPerWeek = totalEmps * 40 * 3600; // 40 hours per week per emp
-
-        weeksData.forEach(w => {
-          let loggedSeconds = 0;
-          timeLogs.forEach(log => {
-            const logDate = new Date(log.startTime);
-            if (logDate >= w.start && logDate <= w.end) {
-              loggedSeconds += (log.durationSeconds || 0);
+          let completedTasks = 0;
+          let onTime = 0;
+          let overdue = 0;
+          
+          empTasks.forEach(t => {
+            const isCompleted = t.status === "Done" || t.status === "Completed";
+            if (isCompleted) {
+              completedTasks++;
+            }
+            
+            if (t.dueDate) {
+              const due = new Date(t.dueDate);
+              const completedAt = t.updatedAt ? new Date(t.updatedAt) : new Date();
+              
+              if (isCompleted && completedAt <= due) {
+                onTime++;
+              } else if ((isCompleted && completedAt > due) || (!isCompleted && new Date() > due)) {
+                overdue++;
+              }
+            } else if (isCompleted) {
+              // If no due date, count it as on time if completed
+              onTime++;
             }
           });
-          w.productivity = Math.min(100, Math.round((loggedSeconds / expectedSecondsPerWeek) * 100));
-        });
+          
+          // Calculate unique attendance days
+          const uniqueDays = new Set();
+          attendance.forEach(a => {
+            if (a.employeeId === emp.id) {
+              const dateStr = new Date(a.date || a.checkInTime).toDateString();
+              uniqueDays.add(dateStr);
+            }
+          });
+          const attendanceDays = uniqueDays.size;
+          
+          // Simple productivity score formula (0-100) based on task completion & on-time delivery
+          let score = 0;
+          if (totalTasks > 0) {
+            const completionRate = completedTasks / totalTasks;
+            const onTimeRate = completedTasks > 0 ? (onTime / completedTasks) : 0;
+            score = Math.round((completionRate * 0.6 + onTimeRate * 0.4) * 100);
+          } else {
+            // If no tasks, productivity depends entirely on attendance (e.g., 1 day = 100% just for demo, usually it'd be expected days)
+            score = attendanceDays > 0 ? 100 : 0;
+          }
+          
+          // Calculate active projects based on boards
+          const activeProjectsSet = new Set();
+          if (Array.isArray(boards)) {
+            boards.forEach((board: any) => {
+              board.groups?.forEach((group: any) => {
+                group.tasks?.forEach((task: any) => {
+                  if ((task.assigneeId === emp.id || task.assignees?.includes(emp.id)) && task.status !== "Done" && task.status !== "Completed") {
+                    activeProjectsSet.add(board.id);
+                  }
+                });
+              });
+            });
+          }
 
-        setData(weeksData.map(w => ({ week: w.week, productivity: w.productivity, target: w.target })));
+          return {
+            id: emp.id,
+            name: emp.firstName + " " + (emp.lastName || ""),
+            totalTasks,
+            completedTasks,
+            onTime,
+            overdue,
+            attendanceDays,
+            activeProjects: activeProjectsSet.size,
+            score
+          };
+        });
+        
+        // Sort by score descending
+        stats.sort((a, b) => b.score - a.score);
+        setData(stats);
       }
     }).catch(console.error)
   }, [effectiveRole])
 
   return (
-    <Card className="flex flex-col h-full">
+    <Card className="flex flex-col h-full col-span-full">
       <CardHeader>
-        <CardTitle>Team Productivity</CardTitle>
-        <CardDescription>Average productivity vs target over 5 weeks.</CardDescription>
+        <CardTitle>Employee Productivity Report</CardTitle>
+        <CardDescription>Comprehensive overview of task completion, timeliness, and attendance.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 min-h-[300px]">
-        <ChartContainer
-          config={{
-            productivity: {
-              label: "Productivity",
-              color: "var(--foreground)",
-            },
-            target: {
-              label: "Target",
-              color: "var(--muted-foreground)",
-            },
-          }}
-          className="w-full h-[300px]"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data.length > 0 ? data : [{week: "This Wk", productivity: 0, target: 80}]} margin={{ top: 20, right: 20, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--muted-foreground)" opacity={0.2} />
-              <XAxis 
-                dataKey="week" 
-                tickLine={false} 
-                axisLine={false} 
-                tick={{ fill: "var(--muted-foreground)" }} 
-                padding={{ left: 20, right: 20 }}
-              />
-              <YAxis 
-                tickLine={false} 
-                axisLine={false} 
-                tick={{ fill: "var(--muted-foreground)" }}
-                allowDecimals={false} 
-              />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Line 
-                type="monotone" 
-                dataKey="productivity" 
-                stroke="var(--color-productivity)" 
-                strokeWidth={3} 
-                dot={{ r: 4 }} 
-                activeDot={{ r: 6 }} 
-              />
-              <Line 
-                type="step" 
-                dataKey="target" 
-                stroke="var(--color-target)" 
-                strokeWidth={2} 
-                strokeDasharray="5 5" 
-                dot={false}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </ChartContainer>
+      <CardContent className="flex-1 overflow-auto">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee Name</TableHead>
+                <TableHead className="text-right">Total Tasks</TableHead>
+                <TableHead className="text-right">Active Projects</TableHead>
+                <TableHead className="text-right">Completed</TableHead>
+                <TableHead className="text-right">On Time</TableHead>
+                <TableHead className="text-right">Overdue</TableHead>
+                <TableHead className="text-right">Days Attended</TableHead>
+                <TableHead className="text-right">Productivity Score</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                    No productivity data found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data.map((emp) => (
+                  <TableRow key={emp.id}>
+                    <TableCell className="font-medium">{emp.name}</TableCell>
+                    <TableCell className="text-right">{emp.totalTasks}</TableCell>
+                    <TableCell className="text-right">{emp.activeProjects}</TableCell>
+                    <TableCell className="text-right text-emerald-500">{emp.completedTasks}</TableCell>
+                    <TableCell className="text-right">{emp.onTime}</TableCell>
+                    <TableCell className="text-right text-rose-500">{emp.overdue}</TableCell>
+                    <TableCell className="text-right">{emp.attendanceDays}</TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={emp.score >= 80 ? "default" : emp.score >= 50 ? "secondary" : "destructive"}>
+                        {emp.score}%
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   )

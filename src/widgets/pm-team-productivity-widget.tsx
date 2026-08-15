@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { fetchApi } from "@/lib/api"
@@ -10,7 +10,7 @@ import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
 
 export function PmTeamProductivityWidget() {
-  const [data, setData] = useState<{week: string, velocity: number}[]>([])
+  const [data, setData] = useState<{name: string, velocity: number, assigned: number}[]>([])
   const { role } = useRoleStore()
   const pathname = usePathname()
   
@@ -20,34 +20,35 @@ export function PmTeamProductivityWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/tasks', {}, effectiveRole)
-      .then(res => res.json())
-      .then(tasks => {
-        if (Array.isArray(tasks)) {
-          const now = new Date();
-          const weeksData = [
-            { week: "4 Weeks Ago", velocity: 0, start: new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000) },
-            { week: "3 Weeks Ago", velocity: 0, start: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000) },
-            { week: "2 Weeks Ago", velocity: 0, start: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000) },
-            { week: "Last Week", velocity: 0, start: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
-          ];
+    Promise.all([
+      fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/employees', {}, effectiveRole).then(res => res.json())
+    ]).then(([tasks, employees]) => {
+      if (Array.isArray(tasks) && Array.isArray(employees)) {
 
+        const empVelocity = employees.map(emp => {
+          let velocity = 0;
+          let assigned = 0;
           tasks.forEach((t: any) => {
-            if (t.status === "Done" || t.status === "Completed") {
-              const updatedAt = new Date(t.updatedAt);
-              for (let i = 3; i >= 0; i--) {
-                if (updatedAt >= weeksData[i].start) {
-                  weeksData[i].velocity++;
-                  break;
-                }
+            if (t.assigneeId === emp.id || t.assignees?.includes(emp.id)) {
+              assigned++;
+              if (t.status === "Done" || t.status === "Completed") {
+                velocity++;
               }
             }
           });
+          return {
+            name: emp.firstName,
+            velocity,
+            assigned
+          };
+        });
 
-          setData(weeksData.map(w => ({ week: w.week, velocity: w.velocity })));
-        }
-      })
-      .catch(console.error);
+        // Sort by assigned tasks descending
+        empVelocity.sort((a, b) => b.assigned - a.assigned);
+        setData(empVelocity);
+      }
+    }).catch(console.error);
   }, [effectiveRole])
 
   return (
@@ -55,28 +56,40 @@ export function PmTeamProductivityWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.5, duration: 0.5 }}
-      className="col-span-1 lg:col-span-2"
+      className="col-span-1 lg:col-span-3"
     >
       <Card className="h-full border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>Team Velocity</CardTitle>
-          <CardDescription>Tasks completed per week.</CardDescription>
+          <CardTitle>Employee Velocity</CardTitle>
+          <CardDescription>Total assigned vs completed tasks.</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ChartContainer
             config={{
-              velocity: { label: "Completed Tasks", color: "var(--foreground)" },
+              assigned: { label: "Total Assigned", color: "#64748b" },
+              velocity: { label: "Completed", color: "#10b981" },
             }}
             className="w-full h-full"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data.length > 0 ? data : [{week: "Last Week", velocity: 0}]} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={data.length > 0 ? data : [{name: "No Data", velocity: 0, assigned: 0}]} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                <XAxis dataKey="week" tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)" }} />
+                <XAxis 
+                  dataKey="name" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} 
+                  interval={0} 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={60} 
+                />
                 <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)" }} allowDecimals={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="velocity" stroke="var(--color-velocity)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-              </LineChart>
+                <Legend verticalAlign="bottom" height={36} />
+                <Bar dataKey="assigned" fill="var(--color-assigned)" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="velocity" fill="var(--color-velocity)" radius={[4, 4, 0, 0]} barSize={20} />
+              </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
         </CardContent>

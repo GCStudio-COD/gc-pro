@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bell, MessageSquare, GitPullRequest, Briefcase, CheckSquare, Clock } from "lucide-react"
+import { Bell, MessageSquare, GitPullRequest, Briefcase, CheckSquare, Clock, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRoleStore } from "@/store/use-role-store"
 import { useAuthStore } from "@/store/use-auth-store"
@@ -38,6 +38,17 @@ export function EmployeeNotificationsWidget() {
       }
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  const removeNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    
+    try {
+      await fetchApi(`/notifications/${id}`, { method: 'DELETE' }, role);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -86,13 +97,20 @@ export function EmployeeNotificationsWidget() {
                   <div 
                     key={notif.id} 
                     onClick={() => markAsRead(notif.id)}
-                    className={`p-3 rounded-lg border flex items-start gap-3 transition-colors cursor-pointer ${notif.read ? 'bg-card opacity-60' : 'bg-muted/30 hover:bg-muted/50 border-primary/20'}`}
+                    className={`group relative p-3 rounded-lg border flex items-start gap-3 transition-colors cursor-pointer ${notif.read ? 'bg-card opacity-60' : 'bg-muted/30 hover:bg-muted/50 border-primary/20'}`}
                   >
                     <div className={`mt-0.5 rounded-md p-1.5 ${getColor(notif.type)}`}>
                       <Icon className="h-3 w-3" />
                     </div>
-                    <p className="text-sm font-medium">{notif.message}</p>
+                    <p className="text-sm font-medium pr-6">{notif.message}</p>
                     {!notif.read && <div className="h-2 w-2 rounded-full bg-primary mt-1.5 ml-auto shrink-0" />}
+                    
+                    <button 
+                      onClick={(e) => removeNotification(e, notif.id)}
+                      className="absolute right-2 top-2 p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 )
               })

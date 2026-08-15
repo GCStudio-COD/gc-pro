@@ -32,7 +32,7 @@ export function ProjectProgressChart() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/projects', {}, effectiveRole)
+    fetchApi('/plaky/boards', {}, effectiveRole)
       .then(res => res.json())
       .then(projects => {
         if (Array.isArray(projects)) {

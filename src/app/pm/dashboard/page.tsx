@@ -3,7 +3,7 @@ import { PmWelcomeWidget } from "@/widgets/pm-welcome-widget"
 import { PmMyProjectsWidget } from "@/widgets/pm-my-projects-widget"
 import { PmQuickActionsWidget } from "@/widgets/pm-quick-actions-widget"
 import { PmProjectProgressWidget } from "@/widgets/pm-project-progress-widget"
-import { PmTaskStatusWidget } from "@/widgets/pm-task-status-widget"
+
 import { PmTeamProductivityWidget } from "@/widgets/pm-team-productivity-widget"
 import { PmAssignedTeamsWidget } from "@/widgets/pm-assigned-teams-widget"
 import { PmUpcomingDeadlinesWidget } from "@/widgets/pm-upcoming-deadlines-widget"
@@ -26,7 +26,6 @@ export default function ProjectManagerDashboardPage() {
           <PmProjectProgressWidget />
           <PmQuickActionsWidget />
           <PmTeamProductivityWidget />
-          <PmTaskStatusWidget />
         </div>
 
         {/* Bottom: Lists, Tables, and feeds */}

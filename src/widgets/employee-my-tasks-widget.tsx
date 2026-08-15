@@ -20,7 +20,7 @@ export function EmployeeMyTasksWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/tasks', {}, effectiveRole)
+    fetchApi('/plaky/tasks', {}, effectiveRole)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { GitMerge, MessageSquare, CheckCircle2, Clock, CheckSquare } from "lucide-react"
+import { GitMerge, MessageSquare, CheckCircle2, Clock, CheckSquare, X } from "lucide-react"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
@@ -20,7 +20,7 @@ export function PmRecentActivitiesWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/tasks', {}, effectiveRole)
+    fetchApi('/plaky/tasks', {}, effectiveRole)
       .then(res => res.json())
       .then(tasks => {
         if (Array.isArray(tasks)) {
@@ -40,6 +40,7 @@ export function PmRecentActivitiesWidget() {
               
               const isDone = t.status === 'Done' || t.status === 'Completed';
               return {
+                id: t.id,
                 action: isDone ? `Completed task: ${t.title}` : `Updated task: ${t.title}`,
                 project: t.project?.name || 'Unknown Project',
                 user: t.assignee?.firstName ? `${t.assignee.firstName} ${t.assignee.lastName?.charAt(0)}.` : 'System',
@@ -54,6 +55,10 @@ export function PmRecentActivitiesWidget() {
       }).catch(console.error)
   }, [effectiveRole])
 
+  const removeActivity = (id: string) => {
+    setActivities(prev => prev.filter(a => a.id !== id));
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -67,14 +72,14 @@ export function PmRecentActivitiesWidget() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {activities.length > 0 ? activities.map((act, i) => {
+            {activities.length > 0 ? activities.map((act) => {
               const Icon = act.icon
               return (
-                <div key={i} className="flex items-start gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50">
+                <div key={act.id} className="group relative flex items-start gap-4 p-3 rounded-lg hover:bg-muted/30 transition-colors border border-transparent hover:border-border/50">
                   <div className={`mt-0.5 rounded-full p-2 bg-muted ${act.color}`}>
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 pr-6">
                     <p className="text-sm font-medium">
                       <span className="font-semibold">{act.user}</span> {act.action}
                     </p>
@@ -84,6 +89,12 @@ export function PmRecentActivitiesWidget() {
                       <span>{act.time}</span>
                     </div>
                   </div>
+                  <button 
+                    onClick={() => removeActivity(act.id)}
+                    className="absolute right-2 top-2 p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )
             }) : (

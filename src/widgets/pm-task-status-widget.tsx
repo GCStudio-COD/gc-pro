@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts"
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { fetchApi } from "@/lib/api"
@@ -12,7 +12,7 @@ import { usePathname } from "next/navigation"
 const COLORS = ["hsl(var(--primary))", "#f59e0b", "#3b82f6", "#10b981"]
 
 export function PmTaskStatusWidget() {
-  const [data, setData] = useState<{name: string, value: number}[]>([])
+  const [data, setData] = useState<any[]>([])
   const { role } = useRoleStore()
   const pathname = usePathname()
   
@@ -22,25 +22,37 @@ export function PmTaskStatusWidget() {
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
   useEffect(() => {
-    fetchApi('/tasks', {}, effectiveRole)
-      .then(res => res.json())
-      .then(tasks => {
-        if (Array.isArray(tasks)) {
-          const counts = { "To Do": 0, "In Progress": 0, "Review": 0, "Done": 0 }
-          tasks.forEach((t: any) => {
-            if (counts.hasOwnProperty(t.status)) {
-              counts[t.status as keyof typeof counts]++
-            } else if (t.status === "Completed") {
-              counts["Done"]++
-            }
-          })
+    Promise.all([
+      fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json()),
+      fetchApi('/employees', {}, effectiveRole).then(res => res.json())
+    ]).then(([tasks, employees]) => {
+        if (Array.isArray(tasks) && Array.isArray(employees)) {
+          const empData = employees.map(emp => {
+            let todo = 0, inProgress = 0, review = 0, done = 0;
+            let total = 0;
+            tasks.forEach((t: any) => {
+              if (t.assigneeId === emp.id || t.assignees?.includes(emp.id)) {
+                 if (t.status === "To Do") todo++;
+                 else if (t.status === "In Progress") inProgress++;
+                 else if (t.status === "Review") review++;
+                 else if (t.status === "Done" || t.status === "Completed") done++;
+                 total++;
+              }
+            });
+            return { 
+              name: emp.firstName, 
+              todo, 
+              inProgress, 
+              review, 
+              done,
+              total
+            };
+          });
           
-          setData([
-            { name: "To Do", value: counts["To Do"] },
-            { name: "In Progress", value: counts["In Progress"] },
-            { name: "Review", value: counts["Review"] },
-            { name: "Done", value: counts["Done"] },
-          ])
+          // Sort by total tasks
+          empData.sort((a, b) => b.total - a.total);
+          
+          setData(empData);
         }
       })
       .catch(console.error)
@@ -55,29 +67,40 @@ export function PmTaskStatusWidget() {
     >
       <Card className="h-full border-border/50 shadow-sm">
         <CardHeader>
-          <CardTitle>Sprint Tasks</CardTitle>
-          <CardDescription>Current sprint task statuses.</CardDescription>
+          <CardTitle>Employee Task Statuses</CardTitle>
+          <CardDescription>Current sprint task statuses broken down by employee.</CardDescription>
         </CardHeader>
         <CardContent className="h-[300px]">
           <ChartContainer
             config={{
-              "To Do": { label: "To Do", color: COLORS[0] },
-              "In Progress": { label: "In Progress", color: COLORS[1] },
-              "Review": { label: "Review", color: COLORS[2] },
-              "Done": { label: "Done", color: COLORS[3] },
+              todo: { label: "To Do", color: COLORS[0] },
+              inProgress: { label: "In Progress", color: COLORS[1] },
+              review: { label: "Review", color: COLORS[2] },
+              done: { label: "Done", color: COLORS[3] },
             }}
-            className="w-full h-[250px]"
+            className="w-full h-full"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <BarChart data={data.length > 0 ? data : [{name: "No Data", todo: 0, inProgress: 0, review: 0, done: 0}]} margin={{ top: 20, right: 10, left: -20, bottom: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                <XAxis 
+                  dataKey="name" 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} 
+                  interval={0} 
+                  angle={-45} 
+                  textAnchor="end" 
+                  height={60} 
+                />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: "var(--muted-foreground)" }} allowDecimals={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Pie data={data} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
-                  {data.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+                <Bar dataKey="todo" stackId="a" fill="var(--color-todo)" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="inProgress" stackId="a" fill="var(--color-inProgress)" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="review" stackId="a" fill="var(--color-review)" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="done" stackId="a" fill="var(--color-done)" radius={[4, 4, 0, 0]} />
                 <Legend verticalAlign="bottom" height={36} />
-              </PieChart>
+              </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
         </CardContent>

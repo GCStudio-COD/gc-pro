@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bell, MessageSquare, GitPullRequest, Briefcase, CheckSquare, Clock } from "lucide-react"
+import { Bell, MessageSquare, GitPullRequest, Briefcase, CheckSquare, Clock, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
@@ -38,10 +38,21 @@ export function PmNotificationsWidget() {
     try {
       const res = await fetchApi(`/notifications/${id}/read`, { method: 'PUT' }, effectiveRole)
       if (res.ok) {
-        fetchNotifications()
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n))
       }
     } catch (e) {
       console.error(e)
+    }
+  }
+
+  const removeNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setNotifications(prev => prev.filter(n => n.id !== id));
+    
+    try {
+      await fetchApi(`/notifications/${id}`, { method: 'DELETE' }, effectiveRole);
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -71,7 +82,7 @@ export function PmNotificationsWidget() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.9, duration: 0.5 }}
+      transition={{ delay: 1.1, duration: 0.5 }}
       className="col-span-1"
     >
       <Card className="h-full border-border/50 shadow-sm">
@@ -83,7 +94,7 @@ export function PmNotificationsWidget() {
         <CardContent>
           <div className="space-y-3">
             {notifications.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No new notifications.</p>
+              <p className="text-sm text-muted-foreground">No new alerts.</p>
             ) : (
               notifications.map((notif) => {
                 const Icon = getIcon(notif.type)
@@ -91,11 +102,18 @@ export function PmNotificationsWidget() {
                   <div 
                     key={notif.id} 
                     onClick={() => markAsRead(notif.id)}
-                    className={`p-3 rounded-lg border flex items-start gap-3 transition-colors cursor-pointer ${notif.read ? 'bg-card opacity-60' : getColor(notif.type)}`}
+                    className={`group relative p-3 rounded-lg border flex items-start gap-3 transition-colors cursor-pointer ${notif.read ? 'bg-card opacity-60' : getColor(notif.type)}`}
                   >
                     <Icon className="h-4 w-4 mt-0.5" />
-                    <p className="text-sm font-medium">{notif.message}</p>
+                    <p className="text-sm font-medium pr-6">{notif.message}</p>
                     {!notif.read && <div className="h-2 w-2 rounded-full bg-current mt-1.5 ml-auto shrink-0" />}
+                    
+                    <button 
+                      onClick={(e) => removeNotification(e, notif.id)}
+                      className="absolute right-2 top-2 p-1.5 rounded hover:bg-black/10 dark:hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
                   </div>
                 )
               })
