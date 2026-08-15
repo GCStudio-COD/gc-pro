@@ -224,12 +224,12 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
               <Label htmlFor="content" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                 <Layout className="w-3.5 h-3.5" /> {getStdName('std_content', 'Content')}
               </Label>
-              <Input 
+              <Textarea 
                 id="content" 
                 value={content} 
                 onChange={(e) => setContent(e.target.value)} 
                 placeholder="E.g. Product promotion video" 
-                className="h-11 rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all"
+                className="min-h-[140px] rounded-xl bg-muted/40 border-transparent focus-visible:ring-1 focus-visible:ring-primary/50 hover:bg-muted/70 focus:bg-background transition-all py-3 resize-y"
                 readOnly={isEmployee}
               />
             </div>

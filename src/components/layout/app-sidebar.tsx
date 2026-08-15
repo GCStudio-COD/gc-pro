@@ -149,20 +149,24 @@ export function AppSidebar() {
                     
                     {expandedSpaces[space.id] && space.boards && (
                       <div className="ml-6 pl-2 border-l border-border/50 flex flex-col gap-1 mt-1">
-                        {space.boards.map((board: any) => (
+                        {space.boards.map((board: any) => {
+                          const routePrefix = effectiveRole === 'project-manager' ? 'pm' : effectiveRole;
+                          const spaceIdentifier = space.slug || space.id;
+                          const boardIdentifier = board.slug || board.id;
+                          return (
                           <SidebarMenuItem key={board.id} className="list-none">
                             <SidebarMenuButton 
                               asChild 
-                              isActive={pathname === `/${effectiveRole}/spaces/${space.id}/boards/${board.id}`}
+                              isActive={pathname === `/${routePrefix}/spaces/${spaceIdentifier}/boards/${boardIdentifier}`}
                               className="h-7 text-xs"
                             >
-                              <Link href={`/${effectiveRole}/spaces/${space.id}/boards/${board.id}`}>
+                              <Link href={`/${routePrefix}/spaces/${spaceIdentifier}/boards/${boardIdentifier}`}>
                                 <FolderOpen className="h-3 w-3 mr-1" />
                                 <span className="truncate">{board.name}</span>
                               </Link>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
-                        ))}
+                        )})}
                       </div>
                     )}
                   </div>
