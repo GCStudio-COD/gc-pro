@@ -89,11 +89,11 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="none">
+    <Sidebar collapsible="icon">
       <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 p-0">
-        <div className="flex items-center justify-center w-full h-full group-data-[collapsible=none]:px-4 group-data-[collapsible=none]:justify-start gap-3">
-          <div className="flex h-8 w-8 group-data-[collapsible=none]:h-10 group-data-[collapsible=none]:w-10 items-center justify-center rounded-lg group-data-[collapsible=none]:rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0 transition-all duration-200">
-            <Hexagon className="h-5 w-5 group-data-[collapsible=none]:h-6 group-data-[collapsible=none]:w-6 fill-current transition-all duration-200" />
+        <div className="flex items-center justify-center w-full h-full group-data-[state=expanded]:px-4 group-data-[state=expanded]:justify-start gap-3">
+          <div className="flex h-8 w-8 group-data-[state=expanded]:h-10 group-data-[state=expanded]:w-10 items-center justify-center rounded-lg group-data-[state=expanded]:rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0 transition-all duration-200">
+            <Hexagon className="h-5 w-5 group-data-[state=expanded]:h-6 group-data-[state=expanded]:w-6 fill-current transition-all duration-200" />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
             Nuvio

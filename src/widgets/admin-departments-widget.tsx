@@ -40,7 +40,7 @@ export function AdminDepartmentsWidget() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3, duration: 0.5 }}
-      className="col-span-2"
+      className="col-span-1 lg:col-span-2"
     >
       <Card className="h-full border-border/50 shadow-sm">
         <CardHeader>

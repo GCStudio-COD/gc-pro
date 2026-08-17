@@ -2,6 +2,7 @@
 
 import { ThemeToggle } from "./theme-toggle"
 import { CheckInWidget } from "@/widgets/check-in-widget"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,9 @@ export function AppHeader() {
   return (
     <header className="h-16 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 sticky top-0 z-10 w-full transition-all">
       <div className="flex items-center gap-4">
+        <div className="md:hidden">
+          <SidebarTrigger />
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

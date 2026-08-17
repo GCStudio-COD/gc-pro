@@ -11,12 +11,12 @@ interface AttendanceCalendarProps {
 
 export function AttendanceCalendar({ date, setDate }: AttendanceCalendarProps) {
   return (
-    <Card className="h-full flex flex-col items-center">
+    <Card className="flex flex-col items-center h-fit">
       <CardHeader className="w-full">
         <CardTitle>Select Date</CardTitle>
         <CardDescription>View attendance records by day.</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent>
         <Calendar
           mode="range"
           selected={date}

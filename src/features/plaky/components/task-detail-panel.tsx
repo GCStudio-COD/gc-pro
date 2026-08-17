@@ -115,7 +115,7 @@ export function TaskDetailPanel({ task, board, isOpen, onClose, onRefresh }: Tas
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="sm:max-w-[450px] p-0 flex flex-col gap-0 border-l border-border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden duration-300">
+      <SheetContent className="w-full sm:max-w-[450px] p-0 flex flex-col gap-0 border-l border-border bg-background/95 backdrop-blur-2xl shadow-2xl overflow-hidden duration-300">
         <SheetHeader className="px-6 py-6 border-b bg-gradient-to-br from-primary/10 via-background to-background relative overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none" />
           <SheetTitle className="text-2xl font-bold flex items-center gap-2">

@@ -157,7 +157,7 @@ export function EmployeeList() {
   const canApprove = currentUserRole === "admin" || currentUserRole === "project-manager"
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 w-full">
+    <div className="flex flex-col gap-6 p-4 md:p-8 w-full min-w-0">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Employees</h1>
         <p className="text-muted-foreground mt-1">Manage and view employee directory.</p>
@@ -203,7 +203,7 @@ export function EmployeeList() {
           </div>
         </div>
 
-        <div className="rounded-md border bg-card">
+        <div className="rounded-md border bg-card overflow-hidden min-w-0 w-full">
           <Table>
             <TableHeader>
               <TableRow>

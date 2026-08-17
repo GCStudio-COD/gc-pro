@@ -48,7 +48,7 @@ export function AttendanceFeature() {
       {effectiveRole !== 'employee' && <AttendanceSummary />}
 
       <div className="flex flex-col xl:flex-row gap-6 items-start h-full">
-        <div className="w-full xl:w-auto flex-shrink-0 sticky top-4">
+        <div className="w-full xl:w-auto flex-shrink-0 xl:sticky top-4 z-10">
           <AttendanceCalendar date={date} setDate={setDate} />
         </div>
         <div className="w-full flex-1 flex flex-col gap-6">
