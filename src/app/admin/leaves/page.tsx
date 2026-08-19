@@ -1,3 +1,5 @@
+"use client"
+
 import { AppLayout } from "@/components/layout/app-layout"
 import { LeaveApprovalsWidget } from "@/components/widgets/leave-approvals-widget"
 

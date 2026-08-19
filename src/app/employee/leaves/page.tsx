@@ -1,3 +1,5 @@
+"use client"
+
 import { AppLayout } from "@/components/layout/app-layout"
 import { LeaveApplicationWidget } from "@/components/widgets/leave-application-widget"
 import { EmployeeLeaveBalanceWidget } from "@/widgets/employee-leave-balance-widget"

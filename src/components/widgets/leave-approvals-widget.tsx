@@ -21,6 +21,12 @@ export function LeaveApprovalsWidget() {
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '-'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString()
+  }
+
   useEffect(() => {
     fetchLeaves()
   }, [effectiveRole])
@@ -29,7 +35,8 @@ export function LeaveApprovalsWidget() {
     try {
       const res = await fetchApi('/leaves', {}, effectiveRole)
       if (res.ok) {
-        setLeaves(await res.json())
+        const data = await res.json()
+        setLeaves(Array.isArray(data) ? data : [])
       }
     } catch (e) {
       console.error(e)
@@ -57,7 +64,7 @@ export function LeaveApprovalsWidget() {
         <CardDescription>Review and manage time-off requests from employees.</CardDescription>
       </CardHeader>
       <CardContent>
-        {leaves.length === 0 ? (
+        {!Array.isArray(leaves) || leaves.length === 0 ? (
           <p className="text-sm text-muted-foreground">No leave requests found.</p>
         ) : (
           <div className="rounded-md border">
@@ -75,15 +82,15 @@ export function LeaveApprovalsWidget() {
                 {leaves.map((leave) => (
                   <TableRow key={leave.id}>
                     <TableCell className="font-medium">
-                      {leave.employee ? `${leave.employee.firstName} ${leave.employee.lastName}` : 'Unknown Employee'}
+                      {leave.employee ? `${leave.employee.firstName || ''} ${leave.employee.lastName || ''}`.trim() || 'Unknown Employee' : 'Unknown Employee'}
                     </TableCell>
-                    <TableCell>{leave.type} - {leave.reason}</TableCell>
+                    <TableCell>{leave.type || 'Leave'} - {leave.reason || 'No reason'}</TableCell>
                     <TableCell>
-                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
                     </TableCell>
                     <TableCell>
                       <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' || leave.status === 'Cancelled' ? 'destructive' : leave.status === 'CancelPending' ? 'outline' : 'secondary'}>
-                        {leave.status === 'CancelPending' ? 'Cancellation Pending' : leave.status}
+                        {leave.status === 'CancelPending' ? 'Cancellation Pending' : (leave.status || 'Pending')}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -107,7 +114,7 @@ export function LeaveApprovalsWidget() {
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => handleUpdateStatus(leave.id, 'Approved')}>
                             <XCircle className="h-4 w-4 mr-1 text-red-500" />
-                            Deny Cancel
+                            Keep Approved
                           </Button>
                         </div>
                       )}

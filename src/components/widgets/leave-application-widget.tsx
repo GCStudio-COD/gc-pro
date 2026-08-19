@@ -29,6 +29,12 @@ export function LeaveApplicationWidget() {
 
   const { userId } = useAuthStore()
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return '-'
+    const d = new Date(dateStr)
+    return isNaN(d.getTime()) ? dateStr : d.toLocaleDateString()
+  }
+
   useEffect(() => {
     fetchLeaves()
   }, [effectiveRole, userId])
@@ -38,7 +44,8 @@ export function LeaveApplicationWidget() {
     try {
       const res = await fetchApi(`/leaves?employeeId=${userId}`, {}, effectiveRole)
       if (res.ok) {
-        setLeaves(await res.json())
+        const data = await res.json()
+        setLeaves(Array.isArray(data) ? data : [])
       }
     } catch (e) {
       console.error(e)
@@ -61,9 +68,13 @@ export function LeaveApplicationWidget() {
       }, effectiveRole)
       
       if (!res.ok) {
-        const data = await res.json();
-        alert(data.error || "Failed to submit leave request.");
-        return;
+        let errMessage = "Failed to submit leave request."
+        try {
+          const data = await res.json()
+          if (data && data.error) errMessage = data.error
+        } catch {}
+        alert(errMessage)
+        return
       }
       
       setStartDate("")
@@ -131,21 +142,21 @@ export function LeaveApplicationWidget() {
           <CardDescription>Track the status of your past requests.</CardDescription>
         </CardHeader>
         <CardContent>
-          {leaves.length === 0 ? (
+          {!Array.isArray(leaves) || leaves.length === 0 ? (
             <p className="text-sm text-muted-foreground">No leave history found.</p>
           ) : (
             <div className="space-y-4">
               {leaves.map((leave, i) => (
-                <div key={i} className="flex justify-between items-center p-3 border rounded-lg">
+                <div key={leave.id || i} className="flex justify-between items-center p-3 border rounded-lg">
                   <div>
-                    <div className="font-medium">{leave.type} - {leave.reason}</div>
+                    <div className="font-medium">{leave.type || 'Leave'} - {leave.reason || 'No reason'}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                      {formatDate(leave.startDate)} - {formatDate(leave.endDate)}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge variant={leave.status === 'Approved' ? 'default' : leave.status === 'Rejected' || leave.status === 'Cancelled' ? 'destructive' : leave.status === 'CancelPending' ? 'outline' : 'secondary'}>
-                      {leave.status === 'CancelPending' ? 'Cancellation Pending' : leave.status}
+                      {leave.status === 'CancelPending' ? 'Cancellation Pending' : (leave.status || 'Pending')}
                     </Badge>
                     {(leave.status === 'Pending' || leave.status === 'Approved') && (
                       <Button variant="outline" size="sm" onClick={() => handleCancel(leave.id)}>Cancel</Button>
@@ -160,3 +171,4 @@ export function LeaveApplicationWidget() {
     </div>
   )
 }
+

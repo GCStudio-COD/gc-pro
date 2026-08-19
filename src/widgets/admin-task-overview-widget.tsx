@@ -77,7 +77,7 @@ export function AdminTaskOverviewWidget() {
             className="w-full h-full"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.length > 0 ? data : [{name: "None", open: 0, completed: 0}]} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+              <BarChart data={data.length > 0 ? data : [{name: "None", open: 0, completed: 0, total: 0}]} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                 <XAxis 
                   dataKey="name" 

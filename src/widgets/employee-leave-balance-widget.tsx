@@ -16,17 +16,35 @@ export function EmployeeLeaveBalanceWidget() {
 
   useEffect(() => {
     if (userId) {
-      fetchApi(`/leaves/balances/${userId}`, {}, role).then(res => res.json()).then(data => {
-        setBalances(data)
-      }).catch(console.error)
+      fetchApi(`/leaves/balances/${userId}`, {}, role)
+        .then(async (res) => {
+          if (!res.ok) {
+            setBalances({ paid: { used: 0, total: 1 } })
+            return
+          }
+          const data = await res.json()
+          if (data && typeof data === "object" && data.paid) {
+            setBalances(data)
+          } else {
+            setBalances({ paid: { used: 0, total: 1 } })
+          }
+        })
+        .catch((err) => {
+          console.error(err)
+          setBalances({ paid: { used: 0, total: 1 } })
+        })
+    } else {
+      setBalances({ paid: { used: 0, total: 1 } })
     }
   }, [userId, role])
 
-  const leaves = balances ? [
-    { type: "Paid Time Off (Monthly 1)", used: balances.paid.used, total: balances.paid.total, color: "bg-primary" }
-  ] : []
+  if (!balances || !balances.paid) return null
 
-  if (!balances) return null;
+  const used = Number(balances.paid.used) || 0
+  const total = Number(balances.paid.total) || 1
+  const leaves = [
+    { type: "Paid Time Off (Monthly 1)", used, total, color: "bg-primary" }
+  ]
 
   return (
     <motion.div
@@ -47,10 +65,17 @@ export function EmployeeLeaveBalanceWidget() {
               <div key={i} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{leave.type}</span>
-                  <span className="text-xs text-muted-foreground">{leave.total - leave.used} days left</span>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.max(0, leave.total - leave.used)} days left
+                  </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div className={`h-full ${leave.color}`} style={{ width: `${(leave.used / leave.total) * 100}%` }} />
+                  <div
+                    className={`h-full ${leave.color}`}
+                    style={{
+                      width: `${leave.total > 0 ? Math.min(100, Math.max(0, (leave.used / leave.total) * 100)) : 0}%`,
+                    }}
+                  />
                 </div>
                 <div className="text-xs text-muted-foreground">
                   Used {leave.used} of {leave.total}
@@ -63,3 +88,4 @@ export function EmployeeLeaveBalanceWidget() {
     </motion.div>
   )
 }
+
