@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuthStore } from "@/store/use-auth-store"
+import { fetchApi } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,7 +46,7 @@ export function LoginWidget() {
       // Store token temporarily to fetch user data
       localStorage.setItem("token", token)
       
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/me`, {
+      const res = await fetchApi('/auth/me', {
         headers: {
           "Authorization": `Bearer ${token}`
         }
@@ -88,10 +89,13 @@ export function LoginWidget() {
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match!")
         }
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signup/request`, {
+        const nameParts = (fullname || '').trim().split(' ')
+        const firstName = nameParts[0] || 'User'
+        const lastName = nameParts.slice(1).join(' ') || '-'
+
+        const res = await fetchApi('/auth/signup/request', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password, fullname })
+          body: JSON.stringify({ email, password, fullname, firstName, lastName })
         })
         const data = await res.json()
         if (res.ok) {
@@ -101,9 +105,8 @@ export function LoginWidget() {
           throw new Error(data.error || "Failed to sign up")
         }
       } else if (authMode === 'otp') {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/signup/verify`, {
+        const res = await fetchApi('/auth/signup/verify', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: signupEmail, otp })
         })
         const data = await res.json()
@@ -114,9 +117,8 @@ export function LoginWidget() {
           throw new Error(data.error || "OTP Verification failed")
         }
       } else if (authMode === 'forgot-password') {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/forgot-password/request`, {
+        const res = await fetchApi('/auth/forgot-password/request', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email })
         })
         const data = await res.json()
@@ -130,9 +132,8 @@ export function LoginWidget() {
         if (password !== confirmPassword) {
           throw new Error("Passwords do not match!")
         }
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/forgot-password/reset`, {
+        const res = await fetchApi('/auth/forgot-password/reset', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: signupEmail, otp, newPassword: password })
         })
         const data = await res.json()
@@ -144,18 +145,15 @@ export function LoginWidget() {
         }
       } else {
         // login
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
+        const res = await fetchApi('/auth/login', {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, password })
         })
 
-        if (!res.ok) {
-          const errorData = await res.json()
-          throw new Error(errorData.error || "Failed to login")
-        }
-
         const data = await res.json()
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to login")
+        }
         
         const userRole = data.role || data.employee?.role;
         const userId = data.id || data.employee?.id;

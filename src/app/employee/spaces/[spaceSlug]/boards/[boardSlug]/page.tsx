@@ -38,19 +38,19 @@ export default function BoardPage() {
 
   useEffect(() => {
     if (boardId) {
-      loadBoard()
+      loadBoard(true)
     }
   }, [boardId])
 
-  const loadBoard = async () => {
-    setLoading(true)
+  const loadBoard = async (showLoading = false) => {
+    if (showLoading) setLoading(true)
     const b = await getBoard(boardId)
     if (b) {
       setBoard(b)
     } else {
       toast.error("Board not found")
     }
-    setLoading(false)
+    if (showLoading) setLoading(false)
   }
 
   if (loading) {

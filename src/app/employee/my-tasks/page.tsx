@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useAuthStore } from "@/store/use-auth-store"
+import { fetchApi } from "@/lib/api"
 import { CheckSquare, Clock, CalendarDays, KanbanSquare, Play, Check } from "lucide-react"
 
 export default function EmployeeTasksPage() {
@@ -12,11 +13,7 @@ export default function EmployeeTasksPage() {
   useEffect(() => {
     const fetchTasks = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/plaky/my-boards`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
+        const res = await fetchApi('/plaky/my-boards')
         if (res.ok) {
           const data = await res.json()
           setBoards(data)

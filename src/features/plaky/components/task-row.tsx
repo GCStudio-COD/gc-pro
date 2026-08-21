@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { PlakyTask, Board } from "@/schemas/plaky"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Button } from "@/components/ui/button"
@@ -23,6 +23,48 @@ const statusColors: Record<string, string> = {
   "Review": "bg-purple-500",
   "Approved": "bg-blue-500",
   "Complete": "bg-green-500",
+}
+
+function CustomFieldCell({
+  colId,
+  initialValue,
+  onSave,
+  readOnly
+}: {
+  colId: string;
+  initialValue: string;
+  onSave: (colId: string, value: string) => Promise<void>;
+  readOnly?: boolean;
+}) {
+  const [val, setVal] = useState(initialValue)
+
+  useEffect(() => {
+    setVal(initialValue)
+  }, [initialValue])
+
+  const handleBlur = () => {
+    if (val !== initialValue) {
+      onSave(colId, val)
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.currentTarget.blur()
+    }
+  }
+
+  return (
+    <Input
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      className="h-7 text-xs border-transparent hover:border-input focus:border-input bg-transparent text-center"
+      placeholder="-"
+      readOnly={readOnly}
+    />
+  )
 }
 
 
@@ -173,11 +215,10 @@ export function TaskRow({ board, task, onRefresh, isSubtask = false }: TaskRowPr
           const value = task.customFields?.[col.id] || ''
           return (
             <div key={col.id} className="w-[120px] shrink-0 flex justify-center px-2">
-              <Input 
-                value={value} 
-                onChange={(e) => handleCustomFieldChange(col.id, e.target.value)} 
-                className="h-7 text-xs border-transparent hover:border-input focus:border-input bg-transparent text-center"
-                placeholder="-"
+              <CustomFieldCell
+                colId={col.id}
+                initialValue={value}
+                onSave={handleCustomFieldChange}
                 readOnly={isEmployee}
               />
             </div>
