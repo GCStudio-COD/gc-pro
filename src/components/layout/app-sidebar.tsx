@@ -33,6 +33,7 @@ import {
   FolderOpen
 } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { useRoleStore } from "@/store/use-role-store"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
@@ -92,8 +93,15 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="h-16 flex items-center justify-center border-b border-border/40 p-0">
         <div className="flex items-center justify-center w-full h-full group-data-[state=expanded]:px-4 group-data-[state=expanded]:justify-start gap-3">
-          <div className="flex h-8 w-8 group-data-[state=expanded]:h-10 group-data-[state=expanded]:w-10 items-center justify-center rounded-lg group-data-[state=expanded]:rounded-xl bg-primary text-primary-foreground shadow-sm shrink-0 transition-all duration-200">
-            <Hexagon className="h-5 w-5 group-data-[state=expanded]:h-6 group-data-[state=expanded]:w-6 fill-current transition-all duration-200" />
+          <div className="relative flex h-8 w-8 group-data-[state=expanded]:h-10 group-data-[state=expanded]:w-10 items-center justify-center rounded-lg overflow-hidden shrink-0 transition-all duration-200">
+            <Image 
+              src="/logo.png" 
+              alt="Logo" 
+              width={40} 
+              height={40} 
+              className="object-contain w-full h-full"
+              priority
+            />
           </div>
           <span className="font-bold text-xl tracking-tight text-foreground group-data-[collapsible=icon]:hidden whitespace-nowrap">
             Nuvio

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { usePathname } from "next/navigation"
 
 const COLORS = ["hsl(var(--primary))", "#3b82f6", "#f59e0b", "#10b981"]
@@ -14,6 +15,7 @@ const COLORS = ["hsl(var(--primary))", "#3b82f6", "#f59e0b", "#10b981"]
 export function EmployeeTaskProgressWidget() {
   const [data, setData] = useState<{ name: string, value: number }[]>([])
   const { role } = useRoleStore()
+  const { userId } = useAuthStore()
   const pathname = usePathname()
 
   let effectiveRole = role
@@ -26,12 +28,21 @@ export function EmployeeTaskProgressWidget() {
       .then(res => res.json())
       .then(tasks => {
         if (Array.isArray(tasks)) {
+          let userTasks = tasks;
+          if (effectiveRole === 'employee' || pathname.startsWith('/employee')) {
+            if (userId) {
+              userTasks = tasks.filter((t: any) => t.assigneeId === userId || t.assignee?.id === userId);
+            }
+          }
           const counts = { "To Do": 0, "In Progress": 0, "Review": 0, "Done": 0 }
-          tasks.forEach((t: any) => {
-            if (counts.hasOwnProperty(t.status)) {
-              counts[t.status as keyof typeof counts]++
-            } else if (t.status === "Completed") {
+          userTasks.forEach((t: any) => {
+            const status = t.status || 'To Do';
+            if (status === "Complete" || status === "Completed" || status === "Done" || status === "Approved") {
               counts["Done"]++
+            } else if (counts.hasOwnProperty(status)) {
+              counts[status as keyof typeof counts]++
+            } else {
+              counts["To Do"]++
             }
           })
 
@@ -44,7 +55,7 @@ export function EmployeeTaskProgressWidget() {
         }
       })
       .catch(console.error)
-  }, [effectiveRole])
+  }, [effectiveRole, userId, pathname])
 
   return (
     <motion.div

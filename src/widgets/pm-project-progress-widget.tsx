@@ -27,7 +27,12 @@ export function PmProjectProgressWidget() {
           const chartData = projects.map(p => {
             const allTasks = p.groups?.flatMap((g: any) => g.tasks) || [];
             const totalTasks = allTasks.length;
-            const completedTasks = allTasks.filter((t: any) => t.status === "Done" || t.status === "Completed").length || 0;
+            const isFinished = (status?: string) => {
+              if (!status) return false;
+              const s = status.trim().toLowerCase();
+              return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+            };
+            const completedTasks = allTasks.filter((t: any) => isFinished(t.status)).length || 0;
             const actual = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
             
             // Mock expected based on actual since boards lack date fields

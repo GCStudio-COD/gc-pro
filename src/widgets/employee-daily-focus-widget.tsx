@@ -8,17 +8,25 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { usePathname } from "next/navigation"
 
 export function EmployeeDailyFocusWidget() {
   const [tasksDueToday, setTasksDueToday] = useState(0)
   
   const { role } = useRoleStore()
+  const { userId } = useAuthStore()
   const pathname = usePathname()
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
+
+  const isFinished = (status?: string) => {
+    if (!status) return false;
+    const s = status.trim().toLowerCase();
+    return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+  };
 
   useEffect(() => {
     fetchApi('/plaky/tasks', {}, effectiveRole)
@@ -26,12 +34,21 @@ export function EmployeeDailyFocusWidget() {
       .then(tasks => {
         if (Array.isArray(tasks)) {
           const today = new Date().toISOString().split('T')[0]
-          const dueToday = tasks.filter((t: any) => t.dueDate?.startsWith(today) && t.status !== 'Done' && t.status !== 'Completed')
+          const dueToday = tasks.filter((t: any) => {
+            if (!t.dueDate || !t.dueDate.startsWith(today) || isFinished(t.status)) return false;
+            if (effectiveRole === 'employee' || pathname.startsWith('/employee')) {
+              if (userId) {
+                const assigned = t.assigneeId === userId || t.assignee?.id === userId;
+                if (!assigned) return false;
+              }
+            }
+            return true;
+          })
           setTasksDueToday(dueToday.length)
         }
       })
       .catch(console.error)
-  }, [effectiveRole])
+  }, [effectiveRole, userId, pathname])
 
   return (
     <motion.div

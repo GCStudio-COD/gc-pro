@@ -1,12 +1,11 @@
 import { useState } from "react"
 import { Board, BoardGroup, PlakyTask } from "@/schemas/plaky"
-import { TaskRow } from "./task-row"
+import { TaskRow, GROUP_THEMES, statusStyles, GroupTheme } from "./task-row"
 import { Button } from "@/components/ui/button"
-import { Plus, PlusCircle, ChevronDown, ChevronRight, MoreHorizontal, Type, Heading, Link, Hash, Activity, Tag, Calendar, CalendarDays, Users, Crown, X } from "lucide-react"
+import { Plus, ChevronDown, ChevronRight, Type, Heading, Link as LinkIcon, Hash, Activity, Tag, Calendar, CalendarDays, Users, X, MoreHorizontal, Trash2, Edit3 } from "lucide-react"
 import { usePlakyApi } from "@/hooks/use-plaky-api"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { toast } from "sonner"
 import { usePathname } from "next/navigation"
 import { useAuthStore } from "@/store/use-auth-store"
 
@@ -38,7 +37,7 @@ const EditableHeader = ({ id, defaultName, type, className, parsedColumns, onRen
           onChange={e => setVal(e.target.value)}
           onBlur={handleSave}
           onKeyDown={e => e.key === 'Enter' && handleSave()}
-          className="bg-transparent border-b border-primary outline-none w-full text-center px-1 font-semibold"
+          className="bg-transparent border-b border-primary outline-none w-full text-center px-1 font-semibold text-white text-xs"
         />
       </div>
     )
@@ -46,7 +45,7 @@ const EditableHeader = ({ id, defaultName, type, className, parsedColumns, onRen
 
   return (
     <div 
-      className={`${isEmployee ? '' : 'cursor-pointer hover:bg-muted/50'} transition-colors rounded ${className}`}
+      className={`${isEmployee ? '' : 'cursor-pointer hover:bg-white/10'} transition-colors rounded py-0.5 ${className}`}
       onClick={() => !isEmployee && setIsEditing(true)}
       title={isEmployee ? undefined : "Click to rename"}
     >
@@ -58,20 +57,51 @@ const EditableHeader = ({ id, defaultName, type, className, parsedColumns, onRen
 interface GroupSectionProps {
   board: Board
   group: BoardGroup
+  groupIndex?: number
   onRefresh: () => void
   searchQuery: string
   sortOption: string
   filterStatus: string
 }
 
-export function GroupSection({ board, group, onRefresh, searchQuery, sortOption, filterStatus }: GroupSectionProps) {
-  const { createTask, updateBoard } = usePlakyApi()
+export function GroupSection({ 
+  board, 
+  group, 
+  groupIndex = 0,
+  onRefresh, 
+  searchQuery, 
+  sortOption, 
+  filterStatus 
+}: GroupSectionProps) {
+  const { createTask, updateBoard, deleteGroup, updateGroup } = usePlakyApi()
   const [isExpanded, setIsExpanded] = useState(true)
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [newTaskName, setNewTaskName] = useState("")
+  const [isEditingGroupName, setIsEditingGroupName] = useState(false)
+  const [groupNameVal, setGroupNameVal] = useState(group.name)
   const pathname = usePathname()
   const { role } = useAuthStore()
   const isEmployee = role === 'employee' || Boolean(pathname?.startsWith('/employee'))
+
+  const theme: GroupTheme = GROUP_THEMES[groupIndex % GROUP_THEMES.length]
+
+  const handleDeleteGroup = async () => {
+    if (confirm(`Are you sure you want to delete the group "${group.name}" and all its tasks?`)) {
+      await deleteGroup(group.id)
+      onRefresh()
+    }
+  }
+
+  const handleSaveGroupName = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setIsEditingGroupName(false)
+    if (groupNameVal.trim() && groupNameVal !== group.name) {
+      await updateGroup(group.id, { name: groupNameVal.trim() })
+      onRefresh()
+    } else {
+      setGroupNameVal(group.name)
+    }
+  }
 
   const handleAddColumn = async (type: string, name: string) => {
     let currentCols = [];
@@ -145,10 +175,8 @@ export function GroupSection({ board, group, onRefresh, searchQuery, sortOption,
   // Filter tasks based on search
   const tasks = group.tasks || []
   const filteredTasks = tasks.filter(task => {
-    // Filter by status
     if (filterStatus && filterStatus !== "all" && task.status !== filterStatus) return false;
 
-    // Filter by search query
     if (searchQuery) {
       const q = searchQuery.toLowerCase()
       const inName = task.name.toLowerCase().includes(q)
@@ -182,8 +210,6 @@ export function GroupSection({ board, group, onRefresh, searchQuery, sortOption,
     return (a.order || 0) - (b.order || 0)
   })
 
-  // If searching and this group has no matches, and search is active, you might want to hide it.
-  // But standard Plaky shows the group anyway if we want. We'll hide it if empty during search.
   if (searchQuery && filteredTasks.length === 0) {
     return null
   }
@@ -196,145 +222,253 @@ export function GroupSection({ board, group, onRefresh, searchQuery, sortOption,
   }
 
   return (
-    <div className="flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
-      {/* Group Header */}
-      <div className="flex items-center px-4 py-3 bg-muted/40 border-b">
-        <Button variant="ghost" size="icon" className="h-6 w-6 mr-2" onClick={() => setIsExpanded(!isExpanded)}>
-          {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-        </Button>
-        <h3 className="font-semibold text-lg flex-1">{group.name}</h3>
-        <span className="text-muted-foreground text-sm mr-4">{tasks.length} tasks</span>
+    <div className="flex flex-col">
+      {/* Group Title above table with action menu */}
+      <div className="flex items-center gap-2 mb-2 pl-1 group/gh">
+        {isEditingGroupName ? (
+          <form onSubmit={handleSaveGroupName} className="flex items-center gap-2">
+            <Input 
+              autoFocus
+              className="h-7 text-sm font-bold bg-[#1c1e2d] border-slate-700 max-w-[200px]"
+              style={{ color: theme.hex }}
+              value={groupNameVal}
+              onChange={(e) => setGroupNameVal(e.target.value)}
+              onBlur={handleSaveGroupName}
+            />
+          </form>
+        ) : (
+          <h3 
+            className="font-bold text-base tracking-tight cursor-pointer hover:underline" 
+            style={{ color: theme.hex }}
+            onClick={() => !isEmployee && setIsEditingGroupName(true)}
+            title={isEmployee ? undefined : "Click to rename group"}
+          >
+            {group.name}
+          </h3>
+        )}
+
+        <span className="text-xs text-slate-400 font-medium ml-1">
+          {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
+        </span>
+
+        {!isEmployee && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover/gh:opacity-100 transition-opacity text-slate-400 hover:text-white rounded ml-1">
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 bg-[#242738] border-slate-700 text-slate-200">
+              <DropdownMenuItem onClick={() => setIsEditingGroupName(true)} className="cursor-pointer gap-2 focus:bg-white/10 focus:text-white text-xs">
+                <Edit3 className="h-3.5 w-3.5" /> Rename Group
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsAddingTask(true)} className="cursor-pointer gap-2 focus:bg-white/10 focus:text-white text-xs">
+                <Plus className="h-3.5 w-3.5" /> Add Task
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleDeleteGroup} className="cursor-pointer gap-2 text-destructive focus:text-destructive focus:bg-destructive/10 text-xs">
+                <Trash2 className="h-3.5 w-3.5" /> Delete Group
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
 
-      {/* Table Content */}
-      {isExpanded && (
-        <div className="overflow-x-auto pb-2">
-          <div className="min-w-max">
-            {/* Table Header */}
-            <div className="relative flex items-center px-4 py-2 bg-muted/20 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-          <EditableHeader isEmployee={isEmployee} id="std_taskName" defaultName="Task Name" type="Text" className="w-[300px] shrink-0 pl-8 flex items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          <EditableHeader isEmployee={isEmployee} id="std_person" defaultName="Person" type="Person" className="w-[120px] shrink-0 flex justify-center items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          <EditableHeader isEmployee={isEmployee} id="std_date" defaultName="Date" type="Date" className="w-[100px] shrink-0 flex justify-center items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          <EditableHeader isEmployee={isEmployee} id="std_content" defaultName="Content" type="Rich Text" className="w-[150px] shrink-0 flex justify-center items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          <EditableHeader isEmployee={isEmployee} id="std_creative" defaultName="Creative" type="Text" className="w-[120px] shrink-0 flex justify-center items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          <EditableHeader isEmployee={isEmployee} id="std_status" defaultName="Status" type="Status" className="w-[120px] shrink-0 flex justify-center items-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-          
-          {parsedColumns.filter((col: any) => !col.id.startsWith('std_')).map((col: any) => (
-            <div key={col.id} className="w-[120px] shrink-0 flex items-center justify-center px-2 group/col relative">
-              <EditableHeader isEmployee={isEmployee} id={col.id} defaultName={col.name} type={col.type} className="w-full truncate pr-4 text-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
-              {!isEmployee && (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-4 w-4 absolute right-2 opacity-0 group-hover/col:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full"
-                  onClick={(e) => { e.stopPropagation(); handleRemoveColumn(col.id); }}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          ))}
-          
-          {/* Spacer for dropdown */}
-          <div className="w-[48px] shrink-0" />
+      <div className="overflow-x-auto pb-2">
+        <div className="min-w-max">
+          {/* Column Headers Bar with Dropdown Chevron on the left */}
+          <div className="flex items-center mb-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider whitespace-nowrap">
+            {/* Left Chevron Button in group theme color */}
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-5 h-8 rounded-l-md shrink-0 flex items-center justify-center text-white font-bold shadow-sm transition-transform active:scale-95 select-none"
+              style={{ backgroundColor: theme.hex }}
+              title={isExpanded ? "Collapse group" : "Expand group"}
+            >
+              {isExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
 
-          {!isEmployee && (
-            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 border-l border-border/50">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-muted/50">
-                    <PlusCircle className="h-4 w-4" />
+            {/* 1. Task Name Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_taskName" 
+              defaultName="Task Name" 
+              type="Text" 
+              className="w-[320px] shrink-0 pl-3 flex items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 2. Person / Assignee Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_person" 
+              defaultName="Person" 
+              type="Person" 
+              className="w-[110px] shrink-0 flex justify-center items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 3. Date / Timeline Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_date" 
+              defaultName="Date" 
+              type="Date" 
+              className="w-[120px] shrink-0 flex justify-center items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 4. Content Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_content" 
+              defaultName="Content" 
+              type="Rich Text" 
+              className="w-[150px] shrink-0 flex justify-center items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 5. Creative Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_creative" 
+              defaultName="Creative" 
+              type="Text" 
+              className="w-[130px] shrink-0 flex justify-center items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 6. Status Column Header */}
+            <EditableHeader 
+              isEmployee={isEmployee} 
+              id="std_status" 
+              defaultName="Status" 
+              type="Status" 
+              className="w-[120px] shrink-0 flex justify-center items-center bg-[#1c1e2d] h-8 border-r border-[#131520]" 
+              parsedColumns={parsedColumns} 
+              onRename={handleRenameColumn} 
+            />
+
+            {/* 7. Dynamic Custom Columns */}
+            {parsedColumns.filter((col: any) => !col.id.startsWith('std_')).map((col: any) => (
+              <div key={col.id} className="w-[120px] shrink-0 h-8 bg-[#1c1e2d] border-r border-[#131520] flex items-center justify-center px-2 group/col relative">
+                <EditableHeader isEmployee={isEmployee} id={col.id} defaultName={col.name} type={col.type} className="w-full truncate pr-3 text-center" parsedColumns={parsedColumns} onRename={handleRenameColumn} />
+                {!isEmployee && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-4 w-4 absolute right-1 opacity-0 group-hover/col:opacity-100 transition-opacity text-muted-foreground hover:text-red-500 hover:bg-red-500/10 rounded-full"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveColumn(col.id); }}
+                  >
+                    <X className="h-3 w-3" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-[#2e3142] text-slate-200 border-none shadow-xl p-1 rounded-xl">
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Text', 'Text')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Type className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Text</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Rich Text', 'Rich Text')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Heading className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Rich Text</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Link', 'Link')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Link className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Link</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Numbers', 'Numbers')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Hash className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Numbers</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Status', 'Status')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Activity className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Status</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Tag', 'Tag')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Tag className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Tag</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Date', 'Date')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Calendar className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Date</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Timeline', 'Timeline')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <CalendarDays className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Timeline</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => handleAddColumn('Person', 'Person')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-slate-200 transition-colors">
-                    <Users className="h-4 w-4" />
-                    <span className="flex-1 text-sm font-normal">Person</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            ))}
+            
+            {/* 8. Add Column Button */}
+            {!isEmployee && (
+              <div className="w-[44px] shrink-0 h-8 bg-[#1c1e2d] rounded-r-md flex items-center justify-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded hover:bg-white/10 text-slate-300 hover:text-white">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48 bg-[#242738] text-slate-200 border-slate-700 shadow-xl p-1 rounded-xl">
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Text', 'Text')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Type className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Text</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Rich Text', 'Rich Text')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Heading className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Rich Text</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Link', 'Link')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <LinkIcon className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Link</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Numbers', 'Numbers')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Hash className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Numbers</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Status', 'Status')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Activity className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Status</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Tag', 'Tag')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Tag className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Tag</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Date', 'Date')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Calendar className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Date</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Timeline', 'Timeline')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <CalendarDays className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Timeline</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleAddColumn('Person', 'Person')} className="flex items-center gap-3 cursor-pointer hover:bg-white/10 rounded-lg py-2 px-3 focus:bg-white/10 focus:text-white">
+                      <Users className="h-4 w-4" />
+                      <span className="flex-1 text-sm font-normal">Person</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
 
-      {/* Tasks List */}
+          {/* Tasks List */}
+          {isExpanded && (
             <div className="flex flex-col">
               {filteredTasks.map((task) => (
                 <TaskRow 
                   key={task.id} 
-                  board={board}
+                  board={board} 
                   task={task} 
+                  theme={theme}
                   onRefresh={onRefresh} 
                 />
               ))}
-          
-          {/* Add Task Row */}
-          {!isEmployee && (
-            <div className="flex px-4 py-2 border-b hover:bg-muted/10 transition-colors items-center group cursor-pointer" onClick={() => !isAddingTask && setIsAddingTask(true)}>
-              {isAddingTask ? (
-                <div className="w-full pl-8 py-1">
-                  <form onSubmit={handleAddTask} className="flex items-center gap-2">
-                    <Input 
-                      autoFocus
-                      className="h-8 max-w-sm"
-                      value={newTaskName} 
-                      onChange={(e) => setNewTaskName(e.target.value)} 
-                      placeholder="New task name" 
-                    />
-                    <Button type="submit" size="sm" className="h-8">Add</Button>
-                    <Button type="button" variant="ghost" size="sm" className="h-8" onClick={(e) => {
-                      e.stopPropagation();
-                      setIsAddingTask(false);
-                    }}>Cancel</Button>
-                  </form>
-                </div>
-              ) : (
-                <div className="w-full flex items-center">
-                  <div className="w-5 ml-2 border-l-[3px] border-transparent h-full absolute left-0" />
-                  <div className="flex items-center text-muted-foreground hover:text-foreground transition-colors py-1 pl-1">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    <span className="text-sm">Add Item</span>
+
+              {/* Inline Add Task Form */}
+              {isAddingTask && (
+                <div className="flex items-center mb-1.5 ml-5">
+                  <div className="w-[320px] shrink-0 h-9 bg-[#1d1f2e] px-3 flex items-center gap-2 rounded-l-md border-r border-[#131520]">
+                    <form onSubmit={handleAddTask} className="flex flex-1 items-center gap-2">
+                      <Input 
+                        autoFocus
+                        className="h-7 text-xs bg-transparent border-slate-700 text-white"
+                        value={newTaskName} 
+                        onChange={(e) => setNewTaskName(e.target.value)} 
+                        placeholder="Enter item name..." 
+                      />
+                      <Button type="submit" size="sm" className="h-7 text-xs px-2.5">Add</Button>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => setIsAddingTask(false)}>Cancel</Button>
+                    </form>
                   </div>
+                </div>
+              )}
+
+              {/* Simple + Add Button Row */}
+              {!isEmployee && !isAddingTask && (
+                <div className="flex items-center mt-1 ml-5">
+                  <button 
+                    onClick={() => setIsAddingTask(true)} 
+                    className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer py-1.5 px-3 rounded hover:bg-white/5"
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add
+                  </button>
                 </div>
               )}
             </div>
           )}
         </div>
-        </div>
       </div>
-      )}
     </div>
   )
 }

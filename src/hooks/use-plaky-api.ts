@@ -236,6 +236,38 @@ export function usePlakyApi() {
     }
   }, []);
 
+  const updateGroup = useCallback(async (id: string, data: Partial<BoardGroup>): Promise<BoardGroup | null> => {
+    try {
+      const res = await fetchApi(`/plaky/groups/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      });
+      if (res.ok) {
+        toast.success('Group updated');
+        return await res.json();
+      }
+      throw new Error('Failed to update group');
+    } catch (e: any) {
+      toast.error(e.message);
+      return null;
+    }
+  }, []);
+
+  const deleteGroup = useCallback(async (id: string): Promise<boolean> => {
+    try {
+      const res = await fetchApi(`/plaky/groups/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast.success('Group deleted');
+        return true;
+      }
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to delete group');
+    } catch (e: any) {
+      toast.error(e.message);
+      return false;
+    }
+  }, []);
+
   return {
     loading,
     getWorkspaces,
@@ -249,6 +281,8 @@ export function usePlakyApi() {
     updateBoard,
     deleteBoard,
     createGroup,
+    updateGroup,
+    deleteGroup,
     createTask,
     updateTask,
     deleteTask,

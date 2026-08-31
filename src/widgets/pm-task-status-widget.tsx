@@ -31,11 +31,12 @@ export function PmTaskStatusWidget() {
             let todo = 0, inProgress = 0, review = 0, done = 0;
             let total = 0;
             tasks.forEach((t: any) => {
-              if (t.assigneeId === emp.id || t.assignees?.includes(emp.id)) {
+              if (t.assigneeId === emp.id || t.assignees?.includes(emp.id) || t.assignee?.id === emp.id) {
                  if (t.status === "To Do") todo++;
                  else if (t.status === "In Progress") inProgress++;
                  else if (t.status === "Review") review++;
-                 else if (t.status === "Done" || t.status === "Completed") done++;
+                 else if (t.status === "Done" || t.status === "Completed" || t.status === "Complete" || t.status === "Approved") done++;
+                 else todo++;
                  total++;
               }
             });

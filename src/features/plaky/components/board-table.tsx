@@ -41,11 +41,12 @@ export function BoardTable({ board, onRefresh, searchQuery, sortOption, filterSt
 
   return (
     <div className="flex flex-col gap-8 pb-12">
-      {board.groups?.map((group) => (
+      {board.groups?.map((group, index) => (
         <GroupSection 
           key={group.id} 
           board={board}
           group={group} 
+          groupIndex={index}
           onRefresh={onRefresh} 
           searchQuery={searchQuery}
           sortOption={sortOption}

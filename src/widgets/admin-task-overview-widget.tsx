@@ -25,14 +25,20 @@ export function AdminTaskOverviewWidget() {
       fetchApi('/employees', {}, effectiveRole).then(res => res.json()),
       fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json())
     ]).then(([employees, tasks]) => {
+      const isFinished = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+      };
+
       if (Array.isArray(employees) && Array.isArray(tasks)) {
         const empData = employees.map(emp => {
           let open = 0;
           let completed = 0;
           
           tasks.forEach((t: any) => {
-            if (t.assigneeId === emp.id || t.assignees?.includes(emp.id)) {
-              if (t.status === 'Done' || t.status === 'Completed') {
+            if (t.assigneeId === emp.id || t.assignees?.includes(emp.id) || t.assignee?.id === emp.id) {
+              if (isFinished(t.status)) {
                 completed++;
               } else {
                 open++;

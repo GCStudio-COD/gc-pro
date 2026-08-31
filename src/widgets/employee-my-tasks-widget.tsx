@@ -7,11 +7,13 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { usePathname } from "next/navigation"
 
 export function EmployeeMyTasksWidget() {
   const [tasks, setTasks] = useState<any[]>([])
   const { role } = useRoleStore()
+  const { userId } = useAuthStore()
   const pathname = usePathname()
   
   let effectiveRole = role
@@ -19,16 +21,28 @@ export function EmployeeMyTasksWidget() {
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
   else if (pathname.startsWith('/employee')) effectiveRole = 'employee'
 
+  const isFinished = (status?: string) => {
+    if (!status) return false;
+    const s = status.trim().toLowerCase();
+    return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+  };
+
   useEffect(() => {
     fetchApi('/plaky/tasks', {}, effectiveRole)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          setTasks(data.slice(0, 5))
+          let userTasks = data;
+          if (effectiveRole === 'employee' || pathname.startsWith('/employee')) {
+            if (userId) {
+              userTasks = data.filter(t => t.assigneeId === userId || t.assignee?.id === userId);
+            }
+          }
+          setTasks(userTasks.slice(0, 5))
         }
       })
       .catch(console.error)
-  }, [effectiveRole])
+  }, [effectiveRole, userId, pathname])
 
   return (
     <motion.div
@@ -44,7 +58,7 @@ export function EmployeeMyTasksWidget() {
         <CardContent>
           <div className="space-y-4">
             {tasks.length > 0 ? tasks.map((task, i) => {
-              const isDone = task.status === "Done" || task.status === "Completed"
+              const isDone = isFinished(task.status)
               return (
                 <div 
                   key={task.id || i} 
@@ -56,7 +70,7 @@ export function EmployeeMyTasksWidget() {
                       htmlFor={task.id} 
                       className={`text-sm font-medium leading-none cursor-pointer ${isDone ? "line-through text-muted-foreground" : ""}`}
                     >
-                      {task.title}
+                      {task.name || task.title || 'Untitled Task'}
                     </label>
                     <p className="text-xs text-muted-foreground mt-1">{task.project || 'Unknown Project'}</p>
                   </div>

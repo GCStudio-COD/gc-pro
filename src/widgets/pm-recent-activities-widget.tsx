@@ -38,10 +38,11 @@ export function PmRecentActivitiesWidget() {
                 else timeStr = `${diffHrs} hours ago`;
               }
               
-              const isDone = t.status === 'Done' || t.status === 'Completed';
+              const isDone = t.status === 'Done' || t.status === 'Completed' || t.status === 'Complete' || t.status === 'Approved';
+              const taskTitle = t.name || t.title || 'Untitled Task';
               return {
                 id: t.id,
-                action: isDone ? `Completed task: ${t.title}` : `Updated task: ${t.title}`,
+                action: isDone ? `Completed task: ${taskTitle}` : `Updated task: ${taskTitle}`,
                 project: t.project?.name || 'Unknown Project',
                 user: t.assignee?.firstName ? `${t.assignee.firstName} ${t.assignee.lastName?.charAt(0)}.` : 'System',
                 time: timeStr,

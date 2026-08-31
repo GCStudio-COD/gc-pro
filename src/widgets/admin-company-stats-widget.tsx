@@ -37,8 +37,14 @@ export function AdminCompanyStatsWidget() {
       let totalProjects = 0;
       if (Array.isArray(projects)) totalProjects = projects.length;
       
+      const isFinished = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+      };
+      
       let activeTasks = 0;
-      if (Array.isArray(tasks)) activeTasks = tasks.filter(t => t.status !== 'Done' && t.status !== 'Completed').length;
+      if (Array.isArray(tasks)) activeTasks = tasks.filter(t => !isFinished(t.status)).length;
       
       let totalEmployees = 0;
       if (Array.isArray(employees)) totalEmployees = employees.length;

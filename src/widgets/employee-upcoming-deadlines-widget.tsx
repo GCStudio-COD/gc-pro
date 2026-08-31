@@ -6,12 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CalendarDays, AlertCircle } from "lucide-react"
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
+import { useAuthStore } from "@/store/use-auth-store"
 import { usePathname } from "next/navigation"
 
 export function EmployeeUpcomingDeadlinesWidget() {
   const [deadlines, setDeadlines] = useState<any[]>([])
   
   const { role } = useRoleStore()
+  const { userId } = useAuthStore()
   const pathname = usePathname()
   
   let effectiveRole = role
@@ -28,29 +30,48 @@ export function EmployeeUpcomingDeadlinesWidget() {
       now.setHours(0,0,0,0);
 
       const getPriorityWeight = (p: string) => {
-        if (p === 'Critical') return 4;
+        if (p === 'Critical' || p === 'Urgent') return 4;
         if (p === 'High') return 3;
         if (p === 'Medium') return 2;
         return 1;
       };
 
+      const isFinished = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+      };
+
       if (Array.isArray(tasks)) {
-        combined.push(...tasks.filter(t => t.status !== 'Done' && t.status !== 'Completed').map(t => {
-          const d = new Date(t.dueDate);
-          d.setHours(0,0,0,0);
-          const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
-          return {
-            event: `Task: ${t.name}`,
-            dateObj: d,
-            type: "Task",
-            priorityWeight: getPriorityWeight(t.priority),
-            isUrgent: daysUntil <= 1,
-            status: t.priority === 'Critical' || t.priority === 'High' ? 'Critical' : 'Routine'
-          };
-        }))
+        combined.push(...tasks
+          .filter(t => {
+            if (isFinished(t.status) || !t.dueDate) return false;
+            // If viewing as employee, only show tasks assigned to this employee
+            if (effectiveRole === 'employee' || pathname.startsWith('/employee')) {
+              if (userId) {
+                const assigned = t.assigneeId === userId || t.assignee?.id === userId;
+                if (!assigned) return false;
+              }
+            }
+            return true;
+          })
+          .map(t => {
+            const d = new Date(t.dueDate);
+            if (isNaN(d.getTime())) return null;
+            d.setHours(0,0,0,0);
+            const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
+            return {
+              event: `Task: ${t.name || t.title || 'Untitled Task'}`,
+              dateObj: d,
+              type: "Task",
+              priorityWeight: getPriorityWeight(t.priority),
+              isUrgent: daysUntil <= 1,
+              status: t.priority === 'Critical' || t.priority === 'High' || t.priority === 'Urgent' ? 'Critical' : 'Routine'
+            };
+          })
+          .filter(Boolean)
+        )
       }
-
-
 
       combined = combined
         .filter(d => d.dateObj >= now)
@@ -69,7 +90,7 @@ export function EmployeeUpcomingDeadlinesWidget() {
         date: d.dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       })))
     }).catch(console.error)
-  }, [effectiveRole])
+  }, [effectiveRole, userId, pathname])
 
   return (
     <motion.div

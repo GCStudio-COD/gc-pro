@@ -23,13 +23,16 @@ export function EmployeeRecentActivityWidget() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const formatted = data.slice(-3).reverse().map(t => ({
-            action: t.status === 'Done' || t.status === 'Completed' ? "Completed task" : "Updated task",
-            target: t.title || "Unknown Task",
-            time: "Recently",
-            icon: t.status === 'Done' || t.status === 'Completed' ? CheckSquare : FileEdit,
-            color: t.status === 'Done' || t.status === 'Completed' ? "text-emerald-500" : "text-amber-500"
-          }))
+          const formatted = data.slice(-3).reverse().map(t => {
+            const isDone = t.status === 'Done' || t.status === 'Completed' || t.status === 'Complete' || t.status === 'Approved';
+            return {
+              action: isDone ? "Completed task" : "Updated task",
+              target: t.name || t.title || "Unknown Task",
+              time: "Recently",
+              icon: isDone ? CheckSquare : FileEdit,
+              color: isDone ? "text-emerald-500" : "text-amber-500"
+            };
+          })
           setActivities(formatted)
         }
       })

@@ -28,29 +28,38 @@ export function PmUpcomingDeadlinesWidget() {
       now.setHours(0,0,0,0);
 
       const getPriorityWeight = (p: string) => {
-        if (p === 'Critical') return 4;
+        if (p === 'Critical' || p === 'Urgent') return 4;
         if (p === 'High') return 3;
         if (p === 'Medium') return 2;
         return 1;
       };
 
+      const isFinished = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+      };
+
       if (Array.isArray(tasks)) {
-        combined.push(...tasks.filter(t => t.status !== 'Done' && t.status !== 'Completed').map(t => {
-          const d = new Date(t.dueDate);
-          d.setHours(0,0,0,0);
-          const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
-          return {
-            event: `Task: ${t.name}`,
-            dateObj: d,
-            type: "Task",
-            priorityWeight: getPriorityWeight(t.priority),
-            isUrgent: daysUntil <= 1,
-            status: t.priority === 'Critical' || t.priority === 'High' ? 'Critical' : 'Routine'
-          };
-        }))
+        combined.push(...tasks
+          .filter(t => !isFinished(t.status) && t.dueDate)
+          .map(t => {
+            const d = new Date(t.dueDate);
+            if (isNaN(d.getTime())) return null;
+            d.setHours(0,0,0,0);
+            const daysUntil = Math.round((d.getTime() - now.getTime()) / (1000 * 3600 * 24));
+            return {
+              event: `Task: ${t.name || t.title || 'Untitled Task'}`,
+              dateObj: d,
+              type: "Task",
+              priorityWeight: getPriorityWeight(t.priority),
+              isUrgent: daysUntil <= 1,
+              status: t.priority === 'Critical' || t.priority === 'High' || t.priority === 'Urgent' ? 'Critical' : 'Routine'
+            };
+          })
+          .filter(Boolean)
+        )
       }
-
-
 
       combined = combined
         .filter(d => d.dateObj >= now)

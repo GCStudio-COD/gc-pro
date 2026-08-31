@@ -24,15 +24,21 @@ export function PmTeamProductivityWidget() {
       fetchApi('/plaky/tasks', {}, effectiveRole).then(res => res.json()),
       fetchApi('/employees', {}, effectiveRole).then(res => res.json())
     ]).then(([tasks, employees]) => {
+      const isFinished = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        return s === 'done' || s === 'completed' || s === 'complete' || s === 'approved' || s === 'closed';
+      };
+
       if (Array.isArray(tasks) && Array.isArray(employees)) {
 
         const empVelocity = employees.map(emp => {
           let velocity = 0;
           let assigned = 0;
           tasks.forEach((t: any) => {
-            if (t.assigneeId === emp.id || t.assignees?.includes(emp.id)) {
+            if (t.assigneeId === emp.id || t.assignees?.includes(emp.id) || t.assignee?.id === emp.id) {
               assigned++;
-              if (t.status === "Done" || t.status === "Completed") {
+              if (isFinished(t.status)) {
                 velocity++;
               }
             }
