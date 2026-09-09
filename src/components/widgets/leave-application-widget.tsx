@@ -127,6 +127,7 @@ export function LeaveApplicationWidget() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Paid">Paid Time Off (Monthly 1)</SelectItem>
+                  <SelectItem value="Unpaid">Unpaid Leave</SelectItem>
                   <SelectItem value="Work From Home">Work From Home (Unlimited)</SelectItem>
                 </SelectContent>
               </Select>
