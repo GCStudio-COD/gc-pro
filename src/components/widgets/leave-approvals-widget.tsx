@@ -92,10 +92,13 @@ export function LeaveApprovalsWidget() {
       if (reviewModal.actionStatus) {
         payload.status = reviewModal.actionStatus
       }
+      const commentText = (reviewModal.comment || "").trim()
+      // Send both generic comment and role-specific field so backend handles any role casing
+      payload.comment = commentText
       if (effectiveRole === 'admin') {
-        payload.adminComment = reviewModal.comment
+        payload.adminComment = commentText
       } else {
-        payload.pmComment = reviewModal.comment
+        payload.pmComment = commentText
       }
 
       const res = await fetchApi(`/leaves/${reviewModal.leave.id}`, {
@@ -104,6 +107,9 @@ export function LeaveApprovalsWidget() {
       }, effectiveRole)
 
       if (res.ok) {
+        const updated = await res.json()
+        // Immediately update state so comment appears right away
+        setLeaves(prev => prev.map(item => item.id === updated.id ? { ...item, ...updated } : item))
         setReviewModal({ isOpen: false, leave: null, actionStatus: null, comment: "" })
         fetchLeaves()
       } else {
