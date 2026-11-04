@@ -25,7 +25,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     const interval = setInterval(() => {
       // The api.ts already handles redirecting to /login on 401
       fetchApi('/auth/check').catch(() => { });
-    }, 3000);
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
   return (
