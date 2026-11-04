@@ -35,8 +35,12 @@ export async function fetchApi(endpoint: string, options: RequestInit = {}, role
 
     return response;
   } catch (err: any) {
-    console.error(`[fetchApi error on ${cleanEndpoint}]:`, err?.message || err);
-    return new Response(JSON.stringify({ error: err?.message || 'Network request failed. Please check your connection or try again.' }), {
+    console.error(`[fetchApi error on ${cleanEndpoint}] (Target: ${fullUrl}):`, err?.message || err);
+    const errorMessage = err?.message === 'Failed to fetch'
+      ? `Failed to connect to API server at ${fullUrl}. Please verify the server is running and CORS is enabled.`
+      : (err?.message || 'Network request failed. Please check your connection or try again.');
+
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 503,
       statusText: 'Service Unavailable',
       headers: { 'Content-Type': 'application/json' }
