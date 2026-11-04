@@ -42,8 +42,24 @@ export function EmployeeLeaveBalanceWidget() {
 
   const used = Number(balances.paid.used) || 0
   const total = Number(balances.paid.total) || 1
+  const wfhUsed = balances.wfh ? Number(balances.wfh.used) || 0 : 0
+  const wfhTotal = balances.wfh ? Number(balances.wfh.total) || 4 : 4
+
   const leaves = [
-    { type: "Paid Time Off (Monthly 1)", used, total, color: "bg-primary" }
+    { 
+      type: "Paid Time Off (Monthly 1)", 
+      used, 
+      total, 
+      remaining: Number(Math.max(0, total - used).toFixed(1)),
+      color: "bg-primary" 
+    },
+    ...(balances.wfh ? [{ 
+      type: "Work From Home (Monthly 4)", 
+      used: wfhUsed, 
+      total: wfhTotal, 
+      remaining: Number(Math.max(0, wfhTotal - wfhUsed).toFixed(1)),
+      color: "bg-blue-500" 
+    }] : [])
   ]
 
   return (
@@ -66,7 +82,7 @@ export function EmployeeLeaveBalanceWidget() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{leave.type}</span>
                   <span className="text-xs text-muted-foreground">
-                    {Math.max(0, leave.total - leave.used)} days left
+                    {leave.remaining} {leave.remaining === 1 ? 'day' : 'days'} left
                   </span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -78,7 +94,7 @@ export function EmployeeLeaveBalanceWidget() {
                   />
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Used {leave.used} of {leave.total}
+                  Used {leave.used} of {leave.total} days
                 </div>
               </div>
             ))}
