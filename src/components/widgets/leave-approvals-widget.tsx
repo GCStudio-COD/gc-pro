@@ -12,6 +12,7 @@ import { CheckCircle2, XCircle, MessageSquare, ShieldCheck, UserCheck, Calendar 
 import { fetchApi } from "@/lib/api"
 import { useRoleStore } from "@/store/use-role-store"
 import { usePathname } from "next/navigation"
+import { toast } from "sonner"
 
 export function LeaveApprovalsWidget() {
   const [leaves, setLeaves] = useState<any[]>([])
@@ -19,18 +20,24 @@ export function LeaveApprovalsWidget() {
     isOpen: boolean
     leave: any | null
     actionStatus: string | null
-    comment: string
+    adminComment: string
+    pmComment: string
   }>({
     isOpen: false,
     leave: null,
     actionStatus: null,
-    comment: ""
+    adminComment: "",
+    pmComment: ""
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const { role } = useRoleStore()
   const pathname = usePathname()
   
+  const normalizedRole = (role || '').toLowerCase().replace(/[-_ ]/g, '')
+  const isAdmin = normalizedRole.includes('admin') || pathname.startsWith('/admin')
+  const isPM = normalizedRole.includes('pm') || normalizedRole.includes('projectmanager') || pathname.startsWith('/pm')
+
   let effectiveRole = role
   if (pathname.startsWith('/admin')) effectiveRole = 'admin'
   else if (pathname.startsWith('/pm')) effectiveRole = 'project-manager'
@@ -59,28 +66,22 @@ export function LeaveApprovalsWidget() {
   }
 
   const openActionModal = (leave: any, actionStatus: string) => {
-    const currentComment = effectiveRole === 'admin' 
-      ? (leave.adminComment || '') 
-      : (leave.pmComment || '')
-
     setReviewModal({
       isOpen: true,
       leave,
       actionStatus,
-      comment: currentComment
+      adminComment: leave.adminComment || '',
+      pmComment: leave.pmComment || ''
     })
   }
 
   const openCommentModal = (leave: any) => {
-    const currentComment = effectiveRole === 'admin' 
-      ? (leave.adminComment || '') 
-      : (leave.pmComment || '')
-
     setReviewModal({
       isOpen: true,
       leave,
       actionStatus: null,
-      comment: currentComment
+      adminComment: leave.adminComment || '',
+      pmComment: leave.pmComment || ''
     })
   }
 
@@ -88,17 +89,16 @@ export function LeaveApprovalsWidget() {
     if (!reviewModal.leave) return
     setIsSubmitting(true)
     try {
-      const payload: any = {}
+      const adminText = (reviewModal.adminComment || "").trim()
+      const pmText = (reviewModal.pmComment || "").trim()
+
+      const payload: any = {
+        adminComment: adminText,
+        pmComment: pmText,
+        comment: adminText || pmText
+      }
       if (reviewModal.actionStatus) {
         payload.status = reviewModal.actionStatus
-      }
-      const commentText = (reviewModal.comment || "").trim()
-      // Send both generic comment and role-specific field so backend handles any role casing
-      payload.comment = commentText
-      if (effectiveRole === 'admin') {
-        payload.adminComment = commentText
-      } else {
-        payload.pmComment = commentText
       }
 
       const res = await fetchApi(`/leaves/${reviewModal.leave.id}`, {
@@ -108,9 +108,14 @@ export function LeaveApprovalsWidget() {
 
       if (res.ok) {
         const updated = await res.json()
-        // Immediately update state so comment appears right away
+        // Immediately update state so comments and status update right away
         setLeaves(prev => prev.map(item => item.id === updated.id ? { ...item, ...updated } : item))
-        setReviewModal({ isOpen: false, leave: null, actionStatus: null, comment: "" })
+        setReviewModal({ isOpen: false, leave: null, actionStatus: null, adminComment: "", pmComment: "" })
+        toast.success(
+          reviewModal.actionStatus 
+            ? `Leave request marked as ${reviewModal.actionStatus}` 
+            : "Remarks saved successfully!"
+        )
         fetchLeaves()
       } else {
         let msg = "Failed to update leave request."
@@ -118,10 +123,11 @@ export function LeaveApprovalsWidget() {
           const data = await res.json()
           if (data && data.error) msg = data.error
         } catch {}
-        alert(msg)
+        toast.error(msg)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
+      toast.error(e?.message || "An unexpected error occurred while saving.")
     } finally {
       setIsSubmitting(false)
     }
@@ -186,22 +192,22 @@ export function LeaveApprovalsWidget() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[240px]">
-                        <div className="space-y-1">
+                      <TableCell className="max-w-[260px]">
+                        <div className="space-y-1.5">
                           {leave.adminComment && (
-                            <div className="text-xs bg-muted/60 dark:bg-muted/30 p-1.5 rounded border">
-                              <span className="font-medium text-foreground flex items-center gap-1">
-                                <ShieldCheck className="h-3 w-3 text-primary" /> Admin:
+                            <div className="text-xs bg-muted/60 dark:bg-muted/30 p-2 rounded border">
+                              <span className="font-medium text-foreground flex items-center gap-1 mb-0.5">
+                                <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Admin:
                               </span>
-                              <span className="text-foreground/90">{leave.adminComment}</span>
+                              <span className="text-foreground/90 break-words">{leave.adminComment}</span>
                             </div>
                           )}
                           {leave.pmComment && (
-                            <div className="text-xs bg-muted/60 dark:bg-muted/30 p-1.5 rounded border">
-                              <span className="font-medium text-foreground flex items-center gap-1">
-                                <UserCheck className="h-3 w-3 text-blue-500" /> PM:
+                            <div className="text-xs bg-muted/60 dark:bg-muted/30 p-2 rounded border">
+                              <span className="font-medium text-foreground flex items-center gap-1 mb-0.5">
+                                <UserCheck className="h-3.5 w-3.5 text-blue-500" /> PM:
                               </span>
-                              <span className="text-foreground/90">{leave.pmComment}</span>
+                              <span className="text-foreground/90 break-words">{leave.pmComment}</span>
                             </div>
                           )}
                           {!leave.adminComment && !leave.pmComment && (
@@ -222,7 +228,7 @@ export function LeaveApprovalsWidget() {
                             variant="ghost"
                             className="h-8 px-2 text-xs"
                             onClick={() => openCommentModal(leave)}
-                            title="Add / Edit Comment"
+                            title="Add / Edit Comments"
                           >
                             <MessageSquare className="h-4 w-4 mr-1 text-muted-foreground" />
                             Comment
@@ -265,18 +271,18 @@ export function LeaveApprovalsWidget() {
 
       {/* Review / Comment Dialog */}
       <Dialog open={reviewModal.isOpen} onOpenChange={(open) => !open && setReviewModal(prev => ({ ...prev, isOpen: false }))}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[540px]">
           <DialogHeader>
             <DialogTitle>
               {reviewModal.actionStatus === 'Approved' && "Approve Leave Request"}
               {reviewModal.actionStatus === 'Rejected' && "Reject Leave Request"}
               {reviewModal.actionStatus === 'Cancelled' && "Approve Leave Cancellation"}
-              {!reviewModal.actionStatus && "Leave Comment & Remarks"}
+              {!reviewModal.actionStatus && "Leave Comments & Remarks"}
             </DialogTitle>
             <DialogDescription>
               {reviewModal.actionStatus 
-                ? `Update leave request status to "${reviewModal.actionStatus}" and optionally add a remark.`
-                : "Add or update your feedback and notes for this leave request."}
+                ? `Update leave request status to "${reviewModal.actionStatus}" and add or update remarks.`
+                : "Add or update feedback and notes for this leave request."}
             </DialogDescription>
           </DialogHeader>
 
@@ -313,38 +319,37 @@ export function LeaveApprovalsWidget() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Reason:</span>
-                  <span className="font-medium">{reviewModal.leave.reason}</span>
+                  <span className="font-medium">{reviewModal.leave.reason || 'No reason provided'}</span>
                 </div>
               </div>
 
-              {/* Display existing comments from other reviewer if present */}
-              {effectiveRole === 'admin' && reviewModal.leave.pmComment && (
-                <div className="text-xs bg-muted/60 p-2.5 rounded border">
-                  <span className="font-semibold flex items-center gap-1 text-foreground">
-                    <UserCheck className="h-3.5 w-3.5 text-blue-500" /> Project Manager Comment:
-                  </span>
-                  <span className="text-foreground/90">{reviewModal.leave.pmComment}</span>
-                </div>
-              )}
-              {effectiveRole === 'project-manager' && reviewModal.leave.adminComment && (
-                <div className="text-xs bg-muted/60 p-2.5 rounded border">
-                  <span className="font-semibold flex items-center gap-1 text-foreground">
-                    <ShieldCheck className="h-3.5 w-3.5 text-primary" /> Admin Comment:
-                  </span>
-                  <span className="text-foreground/90">{reviewModal.leave.adminComment}</span>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="leave-comment">
-                  {effectiveRole === 'admin' ? "Admin Comment / Notes" : "Project Manager Comment / Notes"}
+              {/* Admin Remarks Input */}
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-remarks" className="flex items-center gap-1.5 text-xs font-semibold">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  Admin Remarks
                 </Label>
                 <Textarea
-                  id="leave-comment"
-                  placeholder="Enter remarks (e.g. Approved, task handover confirmed, or reason for rejection)..."
-                  value={reviewModal.comment}
-                  onChange={(e) => setReviewModal(prev => ({ ...prev, comment: e.target.value }))}
-                  className="min-h-[90px]"
+                  id="admin-remarks"
+                  placeholder="Enter remarks from Admin (e.g. Leave approved, salary adjusted, etc.)..."
+                  value={reviewModal.adminComment}
+                  onChange={(e) => setReviewModal(prev => ({ ...prev, adminComment: e.target.value }))}
+                  className="min-h-[75px] text-sm"
+                />
+              </div>
+
+              {/* Project Manager Remarks Input */}
+              <div className="space-y-1.5">
+                <Label htmlFor="pm-remarks" className="flex items-center gap-1.5 text-xs font-semibold">
+                  <UserCheck className="h-4 w-4 text-blue-500" />
+                  Project Manager Remarks
+                </Label>
+                <Textarea
+                  id="pm-remarks"
+                  placeholder="Enter remarks from Project Manager (e.g. Handover complete, tasks delegated)..."
+                  value={reviewModal.pmComment}
+                  onChange={(e) => setReviewModal(prev => ({ ...prev, pmComment: e.target.value }))}
+                  className="min-h-[75px] text-sm"
                 />
               </div>
             </div>
@@ -369,7 +374,7 @@ export function LeaveApprovalsWidget() {
                 reviewModal.actionStatus === 'Approved' ? "Confirm Approval" :
                 reviewModal.actionStatus === 'Rejected' ? "Confirm Rejection" :
                 reviewModal.actionStatus === 'Cancelled' ? "Confirm Cancellation" :
-                "Save Comment"
+                "Save Remarks"
               )}
             </Button>
           </DialogFooter>

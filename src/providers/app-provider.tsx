@@ -4,6 +4,7 @@ import { ReactNode, useEffect } from "react"
 import QueryProvider from "./query-provider"
 import { ThemeProvider } from "./theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { Toaster } from "@/components/ui/sonner"
 import { useAuthStore } from "@/store/use-auth-store"
 
 export default function AppProvider({ children }: { children: ReactNode }) {
@@ -44,7 +45,10 @@ export default function AppProvider({ children }: { children: ReactNode }) {
       disableTransitionOnChange
     >
       <TooltipProvider>
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+        </QueryProvider>
       </TooltipProvider>
     </ThemeProvider>
   )
